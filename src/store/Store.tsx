@@ -77,9 +77,9 @@ interface AppState {
 }
 
 const defaultProducts: Omit<Product, 'id'>[] = [
-  { name: '5-Gallon Round Bottle', description: 'Standard 5-gallon round bottle, purified drinking water.', price: 40, image: 'https://images.unsplash.com/photo-1523362628745-0c100150b504?auto=format&fit=crop&w=300&q=80' },
-  { name: '5-Gallon Slim Bottle (With Faucet)', description: 'Slim type container with built-in faucet for easy dispensing.', price: 45, image: 'https://images.unsplash.com/photo-1623508154947-2b7e1c8d5b1f?auto=format&fit=crop&w=300&q=80' },
-  { name: 'Alkaline Water (5-Gallon)', description: 'Premium alkaline water for health enthusiasts.', price: 70, image: 'https://images.unsplash.com/photo-1548839140-29a749e1bc4e?auto=format&fit=crop&w=300&q=80' },
+  { name: '5-Gallon Round Bottle', description: 'Standard 5-gallon round bottle, purified drinking water.', price: 40, image: 'https://images.unsplash.com/photo-1548839140-29a749e1bc4e?auto=format&fit=crop&w=300&q=80' },
+  { name: '5-Gallon Slim Bottle (With Faucet)', description: 'Slim type container with built-in faucet for easy dispensing.', price: 45, image: 'https://images.unsplash.com/photo-1600271886742-f049cd451bba?auto=format&fit=crop&w=300&q=80' },
+  { name: 'Alkaline Water (5-Gallon)', description: 'Premium alkaline water for health enthusiasts.', price: 70, image: 'https://images.unsplash.com/photo-1559839734-2b71ea197ec2?auto=format&fit=crop&w=300&q=80' },
 ];
 
 const StoreContext = createContext<AppState | undefined>(undefined);

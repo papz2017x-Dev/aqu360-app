@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { Outlet, NavLink, useLocation } from 'react-router-dom';
-import { ShoppingCart, ClipboardList, User, Droplets, LayoutDashboard } from 'lucide-react';
+import { ShoppingCart, ClipboardList, User, Droplets, LayoutDashboard, HomeIcon } from 'lucide-react';
 import { useStore } from '../store/Store';
 
 export const AppLayout = () => {
@@ -58,7 +58,7 @@ export const AppLayout = () => {
         zIndex: 100,
         paddingBottom: 'env(safe-area-inset-bottom)'
       }}>
-        <BottomNavItem to="/" icon={<Droplets size={24} />} label="Menu" />
+        <BottomNavItem to="/" icon={<HomeIcon size={24} />} label="Menu" />
         <BottomNavItem to="/order" icon={<ShoppingCart size={24} />} label="Cart" />
         <BottomNavItem to="/orders" icon={<ClipboardList size={24} />} label="Orders" />
         <BottomNavItem to="/profile" icon={<User size={24} />} label="Profile" />

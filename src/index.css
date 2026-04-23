@@ -146,11 +146,9 @@ body {
 }
 
 .product-image-container {
-  background-color: var(--color-primary-light);
-  height: 140px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  background-color: #ffffff;
+  height: 160px;
+  overflow: hidden;
 }
 
 .product-info {

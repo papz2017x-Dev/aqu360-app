@@ -21,7 +21,7 @@ export const Home: React.FC = () => {
   return (
     <div className="animate-slide-up">
       {/* Hero Header matching the image */}
-      <div className="aqua-header" style={{ padding: '3rem 1.5rem 3.5rem' }}>
+      <div className="aqua-header" style={{ padding: '2rem 1.5rem 2.5rem' }}>
         <div className="flex items-center gap-4">
           <div style={{
             width: '56px',
@@ -38,12 +38,12 @@ export const Home: React.FC = () => {
           </div>
         </div>
 
-        <div className="search-container" style={{ marginTop: '2rem' }}>
+        <div className="search-container" style={{ marginTop: '1.5rem' }}>
           <Search size={20} className="search-icon" style={{ left: '1.25rem' }} />
           <input
             type="text"
             className="search-input"
-            style={{ paddingLeft: '3.5rem', borderRadius: '18px', height: '3.5rem' }}
+            style={{ paddingLeft: '2.5rem', borderRadius: '18px', height: '3.5rem' }}
             placeholder="Search products..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
@@ -52,7 +52,7 @@ export const Home: React.FC = () => {
       </div>
 
       <div style={{ padding: '2rem 1.5rem' }}>
-        <h2 style={{ fontSize: '1.5rem', fontWeight: 800, color: '#111827', marginBottom: '1.5rem' }}>Water Products</h2>
+        <h2 style={{ fontSize: '1.5rem', fontWeight: 800, color: '#111827', marginBottom: '1.5rem' }}>Products</h2>
 
         {/* Product Grid */}
         <div style={{
@@ -63,11 +63,23 @@ export const Home: React.FC = () => {
           {filteredProducts.map((product: Product) => (
             <div key={product.id} className="product-card" style={{ boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)', border: '1px solid #F3F4F6' }}>
               <div className="product-image-container" style={{ height: '160px' }}>
-                {product.image.startsWith('http') ? (
+                {product.image ? (
                   <img
                     src={product.image}
                     alt={product.name}
-                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                    style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+                    onError={(e) => {
+                      const target = e.currentTarget;
+                      target.style.display = 'none';
+                      const parent = target.parentElement;
+                      if (parent && !parent.querySelector('.img-fallback')) {
+                        const fallback = document.createElement('img');
+                        fallback.src = '/a360.png';
+                        fallback.className = 'img-fallback';
+                        fallback.style.cssText = 'width:64px;opacity:0.15;';
+                        parent.appendChild(fallback);
+                      }
+                    }}
                   />
                 ) : (
                   <img src="/a360.png" alt="Placeholder" style={{ width: '64px', opacity: 0.15 }} />

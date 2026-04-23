@@ -8,7 +8,7 @@ export const OrderPage: React.FC = () => {
   const { products, addOrder, currentUser, deliveryFee: globalDeliveryFee } = useStore();
   const navigate = useNavigate();
   const location = useLocation();
-  
+
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [quantity, setQuantity] = useState(1);
   const [orderType, setOrderType] = useState<OrderType>('delivery');
@@ -96,14 +96,14 @@ export const OrderPage: React.FC = () => {
   }
 
   return (
-    <div className="animate-slide-up" style={{ paddingBottom: '10rem' }}>
+    <div className="animate-slide-up" style={{ paddingBottom: '2rem' }}>
       <div className="p-6 bg-white">
         <h2 style={{ fontSize: '1.5rem', margin: 0, fontWeight: 700 }}>Your Cart</h2>
       </div>
 
       <div style={{ padding: '0 1.5rem' }}>
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-          
+
           {/* Cart Item */}
           <div className="product-card" style={{ padding: '1.25rem', flexDirection: 'row', alignItems: 'center', gap: '1rem' }}>
             <div style={{ width: '60px', height: '60px', background: 'var(--color-primary-light)', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
@@ -133,12 +133,12 @@ export const OrderPage: React.FC = () => {
           <div>
             <h3 className="text-sm font-bold mb-3">Order Type</h3>
             <div className="flex gap-3">
-              <div 
+              <div
                 onClick={() => setOrderType('delivery')}
-                style={{ 
-                  flex: 1, 
-                  padding: '1rem', 
-                  borderRadius: '12px', 
+                style={{
+                  flex: 1,
+                  padding: '1rem',
+                  borderRadius: '12px',
                   border: orderType === 'delivery' ? '2px solid var(--color-primary)' : '1px solid var(--color-border)',
                   background: orderType === 'delivery' ? 'var(--color-primary-light)' : 'white',
                   cursor: 'pointer',
@@ -158,12 +158,12 @@ export const OrderPage: React.FC = () => {
                 </div>
               </div>
 
-              <div 
+              <div
                 onClick={() => setOrderType('pickup')}
-                style={{ 
-                  flex: 1, 
-                  padding: '1rem', 
-                  borderRadius: '12px', 
+                style={{
+                  flex: 1,
+                  padding: '1rem',
+                  borderRadius: '12px',
                   border: orderType === 'pickup' ? '2px solid var(--color-primary)' : '1px solid var(--color-border)',
                   background: orderType === 'pickup' ? 'var(--color-primary-light)' : 'white',
                   cursor: 'pointer',
@@ -190,9 +190,9 @@ export const OrderPage: React.FC = () => {
             <h3 className="text-sm font-bold mb-3">Delivery Address</h3>
             <div style={{ position: 'relative' }}>
               <MapPin size={18} className="text-muted" style={{ position: 'absolute', left: '1rem', top: '1rem' }} />
-              <textarea 
-                className="input" 
-                rows={2} 
+              <textarea
+                className="input"
+                rows={2}
                 style={{ paddingLeft: '3rem' }}
                 placeholder="Enter your full delivery address..."
                 value={address}
@@ -200,9 +200,9 @@ export const OrderPage: React.FC = () => {
                 required
               />
             </div>
-            <button 
-              type="button" 
-              className="btn" 
+            <button
+              type="button"
+              className="btn"
               onClick={handleUseLocation}
               style={{ background: 'white', border: '1px solid var(--color-border)', padding: '0.5rem 1rem', fontSize: '0.75rem', marginTop: '0.5rem', borderRadius: '12px' }}
             >
@@ -213,9 +213,9 @@ export const OrderPage: React.FC = () => {
           {/* Phone Number */}
           <div>
             <h3 className="text-sm font-bold mb-3">Phone Number</h3>
-            <input 
-              type="tel" 
-              className="input" 
+            <input
+              type="tel"
+              className="input"
               placeholder="09XX XXX XXXX"
               value={contactNumber}
               onChange={e => setContactNumber(e.target.value)}
@@ -226,9 +226,9 @@ export const OrderPage: React.FC = () => {
           {/* Notes */}
           <div>
             <h3 className="text-sm font-bold mb-3">Notes (optional)</h3>
-            <textarea 
-              className="input" 
-              rows={2} 
+            <textarea
+              className="input"
+              rows={2}
               placeholder="Any special instructions..."
               value={notes}
               onChange={e => setNotes(e.target.value)}
@@ -236,32 +236,38 @@ export const OrderPage: React.FC = () => {
           </div>
 
           {/* Order Summary */}
-          <div className="product-card" style={{ padding: '1.5rem', background: 'white' }}>
-            <h3 className="font-bold mb-4">Order Summary</h3>
-            <div className="flex justify-between text-sm text-muted mb-2">
-              <span>Items Total</span>
-              <span>₱{itemsTotal.toFixed(2)}</span>
+          <div className="product-card" style={{ background: 'white', display: 'flex', flexDirection: 'column' }}>
+            <div style={{ padding: '1.5rem 1.5rem 0' }}>
+              <h3 className="font-bold mb-4">Order Summary</h3>
+              <hr style={{ margin: '0 0 1rem' }} />
             </div>
-            <div className="flex justify-between text-sm text-muted mb-4">
-              <span>Delivery Fee</span>
-              <span>₱{deliveryFee.toFixed(2)}</span>
-            </div>
-            <div className="flex justify-between items-center mb-6 pt-4 border-t border-gray-100">
-              <span className="font-bold text-lg">Total</span>
-              <span className="font-black text-xl text-primary">₱{totalAmount.toFixed(2)}</span>
-            </div>
-            
-            <div style={{ background: 'var(--color-bg)', padding: '0.75rem', borderRadius: '10px', fontSize: '0.75rem', color: 'var(--color-text-muted)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <Banknote size={16} className="text-success" />
-              <span>Please prepare ₱{totalAmount.toFixed(2)} — Cash on Delivery</span>
-            </div>
-          </div>
 
-          {/* Fixed Bottom Button */}
-          <div style={{ position: 'fixed', bottom: '5rem', left: 0, right: 0, padding: '1.5rem', background: 'white', borderTop: '1px solid var(--color-border)', zIndex: 60 }}>
-            <button type="submit" disabled={loading} className="btn btn-primary w-full" style={{ padding: '1rem', fontSize: '1.125rem', borderRadius: '14px', opacity: loading ? 0.7 : 1 }}>
-              {loading ? 'Placing Order...' : `Place Order — ₱${totalAmount.toFixed(2)}`}
-            </button>
+            {/* Scrollable items area */}
+            <div style={{ overflowY: 'auto', maxHeight: '240px', padding: '0 1.5rem' }}>
+              <div className="flex justify-between text-sm text-muted mb-2">
+                <span>Items Total</span>
+                <span>₱{itemsTotal.toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between text-sm text-muted mb-4">
+                <span>Delivery Fee</span>
+                <span>₱{deliveryFee.toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between items-center mb-4 pt-4 border-t border-gray-100">
+                <span className="font-bold text-lg">Total</span>
+                <span className="font-black text-xl text-primary">₱{totalAmount.toFixed(2)}</span>
+              </div>
+              <div style={{ background: 'var(--color-bg)', padding: '0.75rem', borderRadius: '10px', fontSize: '0.75rem', color: 'var(--color-text-muted)', display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
+                <Banknote size={16} className="text-success" />
+                <span>Please prepare ₱{totalAmount.toFixed(2)} — Cash on Delivery</span>
+              </div>
+            </div>
+
+            {/* Place Order button pinned at bottom of card */}
+            <div style={{ padding: '1rem 1.5rem 1.5rem', borderTop: '1px solid var(--color-border)', marginTop: 'auto' }}>
+              <button type="submit" disabled={loading} className="btn btn-primary w-full" style={{ padding: '1rem', fontSize: '1.125rem', borderRadius: '14px', opacity: loading ? 0.7 : 1 }}>
+                {loading ? 'Placing Order...' : `Place Order — ₱${totalAmount.toFixed(2)}`}
+              </button>
+            </div>
           </div>
         </form>
       </div>

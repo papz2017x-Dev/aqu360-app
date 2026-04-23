@@ -61,21 +61,38 @@ export const Dashboard: React.FC = () => {
     if (file) {
       const reader = new FileReader();
       reader.onloadend = () => {
-        setFormProduct({ ...formProduct, image: reader.result as string });
+        // Compress image to stay within Firestore's 1MB document limit
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const MAX = 400;
+          const ratio = Math.min(MAX / img.width, MAX / img.height, 1);
+          canvas.width = img.width * ratio;
+          canvas.height = img.height * ratio;
+          const ctx = canvas.getContext('2d')!;
+          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+          const compressed = canvas.toDataURL('image/jpeg', 0.7);
+          setFormProduct(prev => ({ ...prev, image: compressed }));
+        };
+        img.src = reader.result as string;
       };
       reader.readAsDataURL(file);
     }
   };
 
-  const handleSaveProduct = (e: React.FormEvent) => {
+  const handleSaveProduct = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (isEditing === 'new') {
-      addProduct(formProduct);
-    } else if (isEditing) {
-      updateProduct({ ...formProduct, id: isEditing });
+    try {
+      if (isEditing === 'new') {
+        await addProduct(formProduct);
+      } else if (isEditing) {
+        await updateProduct({ ...formProduct, id: isEditing });
+      }
+      setIsEditing(null);
+      setFormProduct({ name: '', description: '', price: 0, image: '' });
+    } catch (err: any) {
+      alert(`Failed to save product: ${err?.message ?? 'Unknown error. The image may be too large — try using an image URL instead.'}`);
     }
-    setIsEditing(null);
-    setFormProduct({ name: '', description: '', price: 0, image: '' });
   };
 
   const handleUpdateFee = (e: React.FormEvent) => {
@@ -191,6 +208,13 @@ export const Dashboard: React.FC = () => {
                   <input className="input" type="number" placeholder="Price (₱)" value={formProduct.price || ''} onChange={e => setFormProduct({...formProduct, price: Number(e.target.value)})} required />
                   
                   <div className="flex-col gap-3" style={{ display: 'flex' }}>
+                    <input
+                      className="input"
+                      placeholder="Image URL (paste a link, e.g. https://...)"
+                      value={formProduct.image.startsWith('data:') ? '' : formProduct.image}
+                      onChange={e => setFormProduct({ ...formProduct, image: e.target.value })}
+                    />
+                    <div style={{ textAlign: 'center', fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>— or upload from device —</div>
                     <div className="flex gap-2">
                       <button type="button" className="btn btn-outline flex-1" style={{ fontSize: '0.8rem', padding: '0.6rem' }} onClick={() => fileInputRef.current?.click()}><Upload size={16} /> Upload</button>
                       <button type="button" className="btn btn-outline flex-1" style={{ fontSize: '0.8rem', padding: '0.6rem' }} onClick={() => { fileInputRef.current?.setAttribute('capture', 'environment'); fileInputRef.current?.click(); }}><Camera size={16} /> Photo</button>

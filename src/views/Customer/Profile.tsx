@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useStore } from '../../store/Store';
-import { LogOut, Save, UserCircle, Phone, MapPin, Mail } from 'lucide-react';
+import { LogOut, Save, UserCircle, Phone, MapPin, Mail, Trash2 } from 'lucide-react';
 
 export const Profile: React.FC = () => {
   const { currentUser, updateProfile, deleteAccount, logout } = useStore();
@@ -207,7 +207,17 @@ export const Profile: React.FC = () => {
 };
 
 // Internal Helper Components
-const ProfileField = ({ label, icon, isEditing, value, onChange, type = "text", isMultiline = false }: any) => (
+interface ProfileFieldProps {
+  label: string;
+  icon: React.ReactNode;
+  isEditing: boolean;
+  value: string;
+  onChange: (val: string) => void;
+  type?: string;
+  isMultiline?: boolean;
+}
+
+const ProfileField = ({ label, icon, isEditing, value, onChange, type = "text", isMultiline = false }: ProfileFieldProps) => (
   <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
     <label style={{ fontSize: '0.7rem', fontWeight: 800, color: '#6B7280', textTransform: 'uppercase', letterSpacing: '0.05em', paddingLeft: '0.25rem' }}>
       {label}

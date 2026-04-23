@@ -4,7 +4,7 @@ import type { Order, OrderStatus, Product, User, UserRole } from '../../store/St
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
-import { LayoutDashboard, Map as MapIcon, List, Plus, Edit, Trash2, X, Save, ShieldCheck, Camera, Upload, Truck, Store, MessageSquare, Settings, Navigation } from 'lucide-react';
+import { LayoutDashboard, Map as MapIcon, List, Plus, Edit, Trash2, X, Save, ShieldCheck, Camera, Upload, Truck, Store, MessageSquare, Settings, Navigation, MapPin } from 'lucide-react';
 
 // Fix Leaflet's default icon issue in React
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -166,8 +166,6 @@ export const Dashboard: React.FC = () => {
               </div>
             </div>
 
-            {viewMode === 'list' ? (
-              <div className="flex-col gap-4" style={{ display: 'flex' }}>
             {viewMode === 'list' ? (
               <div className="flex-col gap-4" style={{ display: 'flex' }}>
                 {orders.map((order: Order) => (

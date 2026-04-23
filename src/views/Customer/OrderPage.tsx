@@ -138,8 +138,8 @@ export const OrderPage: React.FC = () => {
   return (
     <div className="animate-slide-up" style={{ paddingBottom: '2rem' }}>
       <div className="p-6 bg-white border-b border-gray-100 mb-6">
-        <h2 style={{ fontSize: '1.75rem', margin: 0, fontWeight: 900, color: 'var(--color-text)' }}>My Cart</h2>
-        <p className="text-muted text-sm">{cart.length} items in your list</p>
+        <h2 style={{ fontSize: '1.75rem', margin: 15, fontWeight: 900, color: 'var(--color-text)' }}>My Cart</h2>
+
       </div>
 
       <div style={{ padding: '0 1.25rem' }}>
@@ -147,7 +147,9 @@ export const OrderPage: React.FC = () => {
 
           {/* Cart Items List */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-            <h3 className="text-sm font-bold uppercase tracking-wider text-muted">Items in Cart</h3>
+            <h3 className="text-sm font-bold uppercase tracking-wider text-muted">Items in Cart: <span style={{ fontSize: '1rem', fontWeight: 800, marginLeft: '0.25rem' }}>
+              {cart.length}
+            </span></h3>
             {cart.map((item: CartItem) => {
               const product = products.find(p => p.id === item.productId);
               if (!product) return null;

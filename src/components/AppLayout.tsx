@@ -28,9 +28,33 @@ export const AppLayout = () => {
           justifyContent: 'space-between'
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-            <img src="/a360.png" alt="Logo" style={{ width: '32px', height: '32px', objectFit: 'contain' }} />
-            <h1 style={{ fontSize: '1.25rem', color: 'var(--color-primary)', margin: 0, fontWeight: 900, letterSpacing: '-0.02em' }}>Aqua360</h1>
+            <div
+              style={{
+                width: '32px',
+                height: '32px',
+                borderRadius: '50%',   // makes it round
+                overflow: 'hidden',    // clips the image inside the circle
+              }}
+            >
+              <img
+                src="/a360.png"
+                alt="Logo"
+                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+              />
+            </div>
+            <h1
+              style={{
+                fontSize: '1.25rem',
+                color: 'var(--color-primary)',
+                margin: 0,
+                fontWeight: 900,
+                letterSpacing: '-0.02em',
+              }}
+            >
+              Aqua360
+            </h1>
           </div>
+
           <div className="flex gap-4 items-center">
             <NavLink to="/profile" style={{ color: 'var(--color-primary)' }}>
               <User size={22} />

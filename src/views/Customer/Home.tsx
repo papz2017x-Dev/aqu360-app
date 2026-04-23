@@ -44,20 +44,48 @@ export const Home: React.FC = () => {
       {/* Hero Header matching the image */}
       <div className="aqua-header" style={{ padding: '2rem 1.5rem 2.5rem' }}>
         <div className="flex items-center gap-4">
-          <div style={{
-            width: '56px',
-            height: '56px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center'
-          }}>
-            <img src="/a360.png" alt="Logo" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+          <div
+            style={{
+              width: '56px',
+              height: '56px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              borderRadius: '50%',   // makes it round
+              overflow: 'hidden',    // clips the image inside the circle
+            }}
+          >
+            <img
+              src="/a360.png"
+              alt="Logo"
+              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+            />
           </div>
           <div>
-            <h1 style={{ fontSize: '1.75rem', color: 'white', margin: 0, fontWeight: 900, letterSpacing: '-0.03em' }}>Aqua360</h1>
-            <p style={{ fontSize: '0.9rem', color: 'rgba(255, 255, 255, 0.9)', margin: 0, fontWeight: 500 }}>Fresh Water, Delivered Fast</p>
+            <h1
+              style={{
+                fontSize: '1.75rem',
+                color: 'white',
+                margin: 0,
+                fontWeight: 900,
+                letterSpacing: '-0.03em',
+              }}
+            >
+              Aqua360
+            </h1>
+            <p
+              style={{
+                fontSize: '0.9rem',
+                color: 'rgba(255, 255, 255, 0.9)',
+                margin: 0,
+                fontWeight: 500,
+              }}
+            >
+              Fresh Water, Delivered Fast
+            </p>
           </div>
         </div>
+
 
         <div className="search-container" style={{ marginTop: '1.5rem' }}>
           <Search size={20} className="search-icon" style={{ left: '1.25rem' }} />

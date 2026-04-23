@@ -3,6 +3,17 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useStore } from '../../store/Store';
 import type { Product, OrderType } from '../../store/Store';
 import { MapPin, CheckCircle, Droplets, Minus, Plus, Truck, Store, Navigation, Banknote } from 'lucide-react';
++import { MapContainer, TileLayer, Marker, useMap, useMapEvents } from 'react-leaflet';
++import 'leaflet/dist/leaflet.css';
++import L from 'leaflet';
++
++// Fix Leaflet default icon
++delete (L.Icon.Default.prototype as any)._getIconUrl;
++L.Icon.Default.mergeOptions({
++  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
++  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
++  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
++});
 
 export const OrderPage: React.FC = () => {
   const { products, addOrder, currentUser, deliveryFee: globalDeliveryFee } = useStore();
@@ -39,8 +50,9 @@ export const OrderPage: React.FC = () => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition((position) => {
         const { latitude, longitude } = position.coords;
-        setUserCoords({ lat: latitude, lng: longitude });
-        setAddress(`My Current Location (${latitude.toFixed(4)}, ${longitude.toFixed(4)})`);
+        const newCoords = { lat: latitude, lng: longitude };
+        setUserCoords(newCoords);
+        setAddress(`Pinned Location (${latitude.toFixed(4)}, ${longitude.toFixed(4)})`);
       }, (error) => {
         console.error("Error getting location:", error);
         alert("Could not get your location. Please enter your address manually.");
@@ -48,6 +60,24 @@ export const OrderPage: React.FC = () => {
     } else {
       alert("Geolocation is not supported by your browser.");
     }
+  };
+
+  // Helper component to update map center
+  const ChangeView = ({ center }: { center: [number, number] }) => {
+    const map = useMap();
+    map.setView(center, map.getZoom());
+    return null;
+  };
+
+  const MapEvents = () => {
+    useMapEvents({
+      click(e) {
+        const { lat, lng } = e.latlng;
+        setUserCoords({ lat, lng });
+        setAddress(`Pinned Location (${lat.toFixed(4)}, ${lng.toFixed(4)})`);
+      },
+    });
+    return null;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -185,9 +215,51 @@ export const OrderPage: React.FC = () => {
             </div>
           </div>
 
-          {/* Delivery Address */}
+          {/* Delivery Address & Map Picker */}
           <div>
             <h3 className="text-sm font-bold mb-3">Delivery Address</h3>
+            
+            {/* Map Picker */}
+            <div style={{ height: '200px', borderRadius: '16px', overflow: 'hidden', marginBottom: '1rem', border: '1px solid var(--color-border)', position: 'relative' }}>
+              <MapContainer 
+                center={userCoords ? [userCoords.lat, userCoords.lng] : [14.5995, 120.9842]} 
+                zoom={15} 
+                style={{ height: '100%', width: '100%' }}
+                zoomControl={false}
+              >
+                <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+                <MapEvents />
+                {userCoords && (
+                  <>
+                    <ChangeView center={[userCoords.lat, userCoords.lng]} />
+                    <Marker 
+                      position={[userCoords.lat, userCoords.lng]} 
+                      draggable={true}
+                      eventHandlers={{
+                        dragend: (e) => {
+                          const marker = e.target;
+                          const position = marker.getLatLng();
+                          setUserCoords({ lat: position.lat, lng: position.lng });
+                          setAddress(`Pinned Location (${position.lat.toFixed(4)}, ${position.lng.toFixed(4)})`);
+                        },
+                      }}
+                    />
+                  </>
+                )}
+              </MapContainer>
+              <div style={{ position: 'absolute', bottom: '10px', right: '10px', zIndex: 400 }}>
+                <button
+                  type="button"
+                  className="btn"
+                  onClick={handleUseLocation}
+                  style={{ background: 'white', border: '1px solid var(--color-border)', padding: '0.5rem', borderRadius: '12px', boxShadow: 'var(--shadow-sm)' }}
+                  title="Use Current Location"
+                >
+                  <Navigation size={18} className="text-primary" />
+                </button>
+              </div>
+            </div>
+
             <div style={{ position: 'relative' }}>
               <MapPin size={18} className="text-muted" style={{ position: 'absolute', left: '1rem', top: '1rem' }} />
               <textarea
@@ -200,14 +272,9 @@ export const OrderPage: React.FC = () => {
                 required
               />
             </div>
-            <button
-              type="button"
-              className="btn"
-              onClick={handleUseLocation}
-              style={{ background: 'white', border: '1px solid var(--color-border)', padding: '0.5rem 1rem', fontSize: '0.75rem', marginTop: '0.5rem', borderRadius: '12px' }}
-            >
-              <Navigation size={14} /> Use Current Location
-            </button>
+            <p style={{ fontSize: '0.7rem', color: 'var(--color-text-muted)', marginTop: '0.5rem', fontStyle: 'italic' }}>
+              Tip: You can also tap/drag the map to pinpoint your location.
+            </p>
           </div>
 
           {/* Phone Number */}

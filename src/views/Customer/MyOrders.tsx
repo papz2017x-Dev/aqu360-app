@@ -105,6 +105,57 @@ export const MyOrders: React.FC = () => {
     };
   }, [isDragging]);
 
+  const stages: Order['status'][] = ['pending', 'processing', 'out-for-delivery', 'delivered'];
+
+  const StatusStepper = ({ currentStatus }: { currentStatus: Order['status'] }) => {
+    if (currentStatus === 'cancelled') return null;
+    
+    const currentIndex = stages.indexOf(currentStatus);
+    
+    return (
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem', padding: '0 0.5rem', position: 'relative' }}>
+        {/* Background line */}
+        <div style={{ position: 'absolute', top: '15px', left: '10%', right: '10%', height: '2px', background: '#E5E7EB', zIndex: 0 }}></div>
+        
+        {/* Active progress line */}
+        <div style={{ 
+          position: 'absolute', top: '15px', left: '10%', 
+          width: `${(currentIndex / (stages.length - 1)) * 80}%`, 
+          height: '2px', background: 'var(--color-primary)', 
+          transition: 'width 0.5s ease', zIndex: 1 
+        }}></div>
+
+        {stages.map((status, idx) => {
+          const isActive = idx <= currentIndex;
+          const isCurrent = idx === currentIndex;
+          
+          return (
+            <div key={status} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', zIndex: 2, flex: 1 }}>
+              <div style={{ 
+                width: '32px', height: '32px', borderRadius: '50%', 
+                background: isCurrent ? 'var(--color-primary)' : (isActive ? 'var(--color-primary-light)' : 'white'),
+                border: isActive ? 'none' : '2px solid #E5E7EB',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                color: isCurrent ? 'white' : (isActive ? 'var(--color-primary)' : '#9CA3AF'),
+                transition: 'all 0.3s ease',
+                boxShadow: isCurrent ? '0 0 0 4px rgba(37, 169, 226, 0.2)' : 'none'
+              }}>
+                {getStatusIcon(status)}
+              </div>
+              <span style={{ 
+                fontSize: '0.6rem', marginTop: '0.5rem', fontWeight: isActive ? 800 : 500, 
+                color: isActive ? 'var(--color-text)' : '#9CA3AF',
+                textAlign: 'center', maxWidth: '60px', textTransform: 'capitalize'
+              }}>
+                {status.replace('-', ' ')}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+    );
+  };
+
   return (
     <div className="animate-slide-up" style={{ userSelect: 'none' }}>
       <div className="p-6 bg-white">
@@ -205,32 +256,38 @@ export const MyOrders: React.FC = () => {
                   }}
                 >
                   {/* Header: Date and Status */}
-                  <div className="flex justify-between items-center mb-2">
+                  <div className="flex justify-between items-center mb-6">
                     <div style={{ color: '#9CA3AF', fontSize: '0.875rem', fontWeight: 500 }}>
                       {formatDateTime(order.createdAt)}
                     </div>
                     <div className="flex items-center gap-2">
-                      <div
-                        style={{
-                          backgroundColor: `${getStatusColor(order.status)}20`,
-                          color: getStatusColor(order.status),
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '0.4rem',
-                          padding: '0.35rem 0.85rem',
-                          borderRadius: '20px',
-                          fontSize: '0.75rem',
-                          fontWeight: 700
-                        }}
-                      >
-                        {getStatusIcon(order.status)}
-                        <span style={{ textTransform: 'capitalize' }}>{order.status.replace('-', ' ')}</span>
-                      </div>
-                      {(order.status === 'pending' || order.status === 'cancelled') && swipedOrderId !== order.id && (
-                        <ChevronLeft size={16} className="text-gray-300 animate-pulse" />
+                      {order.status === 'cancelled' ? (
+                        <div
+                          style={{
+                            backgroundColor: '#FEE2E2',
+                            color: '#EF4444',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '0.4rem',
+                            padding: '0.35rem 0.85rem',
+                            borderRadius: '20px',
+                            fontSize: '0.75rem',
+                            fontWeight: 700
+                          }}
+                        >
+                          <XCircle size={14} />
+                          <span>Cancelled</span>
+                        </div>
+                      ) : (
+                        <div style={{ fontSize: '0.75rem', fontWeight: 700, color: getStatusColor(order.status) }}>
+                          {swipedOrderId !== order.id && <ChevronLeft size={16} className="text-gray-300 animate-pulse inline" />}
+                        </div>
                       )}
                     </div>
                   </div>
+
+                  {/* Stepper for non-cancelled orders */}
+                  <StatusStepper currentStatus={order.status} />
 
                   {/* Body: Items List */}
                   <div className="mb-4">

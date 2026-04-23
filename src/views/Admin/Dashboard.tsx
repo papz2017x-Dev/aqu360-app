@@ -14,6 +14,21 @@ L.Icon.Default.mergeOptions({
   shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
 });
 
+const getStatusMarker = (status: OrderStatus) => {
+  let color = '#3B82F6'; // Default blue
+  if (status === 'pending') color = '#EF4444'; // Red
+  if (status === 'processing') color = '#3B82F6'; // Blue
+  if (status === 'out-for-delivery') color = '#F59E0B'; // Amber
+  if (status === 'delivered') color = '#10B981'; // Green
+  
+  return L.divIcon({
+    className: 'custom-marker',
+    html: `<div style="background-color: ${color}; width: 24px; height: 24px; border-radius: 50%; border: 3px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.3);"></div>`,
+    iconSize: [24, 24],
+    iconAnchor: [12, 12]
+  });
+};
+
 export const Dashboard: React.FC = () => {
   const { 
     orders, updateOrderStatus, 
@@ -179,8 +194,49 @@ export const Dashboard: React.FC = () => {
                 <MapContainer center={[14.5995, 120.9842]} zoom={13} style={{ height: '100%', width: '100%' }}>
                   <TileLayer attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
                   {orders.map((order: Order) => order.location && (
-                    <Marker key={order.id} position={[order.location.lat, order.location.lng]}>
-                      <Popup><strong>{order.customerName}</strong><br/>{order.address}<br/>Status: {order.status}</Popup>
+                    <Marker 
+                      key={order.id} 
+                      position={[order.location.lat, order.location.lng]}
+                      icon={getStatusMarker(order.status)}
+                    >
+                      <Popup>
+                        <div style={{ minWidth: '150px' }}>
+                          <strong style={{ fontSize: '1rem' }}>{order.customerName}</strong>
+                          <p style={{ margin: '4px 0', fontSize: '0.8rem' }}>{order.address}</p>
+                          <div style={{ 
+                            display: 'inline-block', 
+                            padding: '2px 8px', 
+                            borderRadius: '12px', 
+                            fontSize: '0.7rem', 
+                            fontWeight: 800,
+                            background: `${order.status === 'pending' ? '#FEE2E2' : '#DBEAFE'}`,
+                            color: `${order.status === 'pending' ? '#EF4444' : '#1D4ED8'}`,
+                            textTransform: 'uppercase',
+                            marginBottom: '8px'
+                          }}>
+                            {order.status}
+                          </div>
+                          <a 
+                            href={`https://www.google.com/maps/dir/?api=1&destination=${order.location.lat},${order.location.lng}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            style={{ 
+                              display: 'block', 
+                              textAlign: 'center', 
+                              padding: '8px', 
+                              background: 'var(--color-primary)', 
+                              color: 'white', 
+                              borderRadius: '8px',
+                              textDecoration: 'none',
+                              fontWeight: 700,
+                              fontSize: '0.8rem'
+                            }}
+                          >
+                            <Navigation size={14} style={{ display: 'inline', marginRight: '4px', verticalAlign: 'middle' }} />
+                            Get Directions
+                          </a>
+                        </div>
+                      </Popup>
                     </Marker>
                   ))}
                 </MapContainer>

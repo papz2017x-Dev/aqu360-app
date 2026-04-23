@@ -56,49 +56,49 @@ export const Dashboard: React.FC = () => {
       </div>
 
       {/* Main Action Grid */}
-      <div className="flex flex-col gap-4">
-        <h3 className="text-[0.7rem] font-black text-muted uppercase tracking-[0.2em] px-2 mb-1">Service Modules</h3>
+      <div className="mx-4">
+        <h3 className="text-[0.7rem] font-black text-muted uppercase tracking-[0.2em] px-2 mb-4">Service Modules</h3>
         
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
           <HubButton 
             onClick={() => setActiveView('orders')} 
-            icon={<List size={28} />} 
-            title="Orders" 
+            icon={<List size={24} />} 
+            title="Orders & Logistics" 
+            desc="Track deliveries and pickups"
             badge={pendingOrders > 0 ? `${pendingOrders} NEW` : undefined}
-            color="#3B82F6"
           />
           
           <HubButton 
             onClick={() => setActiveView('stock')} 
-            icon={<Store size={28} />} 
-            title="Stock" 
-            color="#8B5CF6"
+            icon={<Store size={24} />} 
+            title="Stock Inventory" 
+            desc="Manage products and pricing"
           />
 
           {isSuperuser && (
             <HubButton 
               onClick={() => setActiveView('reports')} 
-              icon={<BarChart3 size={28} />} 
-              title="Reports" 
-              color="#10B981"
+              icon={<BarChart3 size={24} />} 
+              title="Sales Analytics" 
+              desc="Deep dive into revenue"
             />
           )}
 
           {isSuperuser && (
             <HubButton 
               onClick={() => setActiveView('team')} 
-              icon={<ShieldCheck size={28} />} 
-              title="Team" 
-              color="#F59E0B"
+              icon={<ShieldCheck size={24} />} 
+              title="Team & Access" 
+              desc="Control staff permissions"
             />
           )}
 
           {isSuperuser && (
             <HubButton 
               onClick={() => setActiveView('settings')} 
-              icon={<Settings size={28} />} 
-              title="Settings" 
-              color="#6B7280"
+              icon={<Settings size={24} />} 
+              title="App Settings" 
+              desc="Configure parameters"
             />
           )}
         </div>
@@ -110,16 +110,16 @@ export const Dashboard: React.FC = () => {
 interface HubButtonProps {
   icon: React.ReactNode;
   title: string;
+  desc: string;
   onClick: () => void;
-  color: string;
   badge?: string;
 }
 
-const HubButton = ({ icon, title, onClick, color, badge }: HubButtonProps) => (
+const HubButton = ({ icon, title, desc, onClick, badge }: HubButtonProps) => (
   <button 
     onClick={onClick}
-    className="product-card flex flex-col items-center justify-center p-6 transition-all duration-300 active:scale-95 bg-white border border-gray-100"
-    style={{ borderRadius: '28px', textAlign: 'center', minHeight: '140px', gap: '12px', position: 'relative' }}
+    className="flex flex-col items-center justify-center p-6 transition-all duration-300 active:scale-95 bg-white shadow-sm"
+    style={{ borderRadius: '24px', textAlign: 'center', minHeight: '180px', gap: '8px', border: '1px solid #F1F5F9', position: 'relative' }}
   >
     {badge && (
       <span style={{ 
@@ -133,23 +133,25 @@ const HubButton = ({ icon, title, onClick, color, badge }: HubButtonProps) => (
         padding: '2px 8px', 
         borderRadius: '10px',
         letterSpacing: '0.05em',
-        boxShadow: '0 4px 6px -1px rgba(239, 68, 68, 0.2)'
+        zIndex: 10
       }}>
         {badge}
       </span>
     )}
     <div style={{ 
-      background: `${color}15`, 
-      color: color, 
-      padding: '16px', 
-      borderRadius: '24px',
+      background: '#EFF6FF', 
+      color: '#2563EB', 
+      width: '56px',
+      height: '56px',
+      borderRadius: '50%',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      marginBottom: '4px'
+      marginBottom: '12px'
     }}>
       {icon}
     </div>
-    <div style={{ fontWeight: 900, fontSize: '1rem', color: '#111827' }}>{title}</div>
+    <div style={{ fontWeight: 900, fontSize: '0.85rem', color: '#1E293B', textTransform: 'uppercase', letterSpacing: '0.025em' }}>{title}</div>
+    <div style={{ fontSize: '0.75rem', color: '#64748B', fontWeight: 500, lineHeight: '1.4', maxWidth: '120px' }}>{desc}</div>
   </button>
 );

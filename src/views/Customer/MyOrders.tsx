@@ -2,12 +2,24 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useStore } from '../../store/Store';
 import type { Order, OrderItem } from '../../store/Store';
-import { Clock, CheckCircle, Package, Truck, XCircle, Store, Trash2, ChevronLeft, RefreshCw, Ban } from 'lucide-react';
+import { Clock, CheckCircle, Package, Truck, XCircle, Store, Trash2, ChevronLeft, RefreshCw, Ban, MapPin } from 'lucide-react';
+import { MapContainer, TileLayer, Marker } from 'react-leaflet';
+import 'leaflet/dist/leaflet.css';
+import L from 'leaflet';
+
+// Fix Leaflet default icon
+delete (L.Icon.Default.prototype as any)._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
+  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
+  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+});
 
 export const MyOrders: React.FC = () => {
   const { orders, currentUser, products, updateOrderStatus, deleteOrder } = useStore();
   const navigate = useNavigate();
   const [swipedOrderId, setSwipedOrderId] = useState<string | null>(null);
+  const [showMapId, setShowMapId] = useState<string | null>(null);
 
   // Interaction State
   const [dragStart, setDragStart] = useState<number | null>(null);
@@ -241,17 +253,18 @@ export const MyOrders: React.FC = () => {
                   onTouchStart={(e) => onStart(e.targetTouches[0].clientX)}
                   onTouchMove={(e) => onMove(e.targetTouches[0].clientX, order.id, order.status)}
                   onTouchEnd={onEnd}
+                  onClick={() => setShowMapId(showMapId === order.id ? null : order.id)}
                   style={{
                     padding: '1.5rem',
                     background: 'white',
-                    border: '1px solid #E5E7EB',
-                    boxShadow: 'none',
+                    border: showMapId === order.id ? '2px solid var(--color-primary)' : '1px solid #E5E7EB',
+                    boxShadow: showMapId === order.id ? 'var(--shadow-lg)' : 'none',
                     borderRadius: '16px',
                     position: 'relative',
                     zIndex: 2,
                     transform: swipedOrderId === order.id ? `translateX(-${order.status === 'cancelled' ? '160' : '100'}px)` : 'translateX(0)',
-                    transition: isDragging ? 'none' : 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                    cursor: (order.status === 'pending' || order.status === 'cancelled') ? 'grab' : 'default',
+                    transition: isDragging ? 'none' : 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                    cursor: (order.status === 'pending' || order.status === 'cancelled') ? 'grab' : 'pointer',
                     touchAction: 'pan-y'
                   }}
                 >
@@ -305,13 +318,32 @@ export const MyOrders: React.FC = () => {
                     </p>
                   </div>
 
+                  {/* Map View */}
+                  {showMapId === order.id && order.location && (
+                    <div className="animate-slide-up" style={{ height: '200px', width: '100%', marginBottom: '1.5rem', borderRadius: '12px', overflow: 'hidden', border: '1px solid #E5E7EB' }}>
+                      <MapContainer 
+                        center={[order.location.lat, order.location.lng]} 
+                        zoom={15} 
+                        style={{ height: '100%', width: '100%' }}
+                        zoomControl={false}
+                      >
+                        <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+                        <Marker position={[order.location.lat, order.location.lng]} />
+                      </MapContainer>
+                    </div>
+                  )}
+
                   <div style={{ height: '1px', background: '#F3F4F6', marginBottom: '1rem' }}></div>
 
                   {/* Footer: Service Type and Total */}
                   <div className="flex justify-between items-center">
                     <div className="flex items-center gap-2" style={{ color: '#6B7280', fontSize: '0.875rem', fontWeight: 600 }}>
                       {order.orderType === 'delivery' ? (
-                        <><Truck size={18} style={{ color: '#F59E0B' }} /> Delivery</>
+                        <>
+                          <Truck size={18} style={{ color: '#F59E0B' }} /> 
+                          <span>Delivery</span>
+                          {showMapId === order.id && <MapPin size={14} className="text-primary animate-bounce" />}
+                        </>
                       ) : (
                         <><Store size={18} style={{ color: '#10B981' }} /> Pickup</>
                       )}

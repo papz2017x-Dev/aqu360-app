@@ -4,7 +4,8 @@ import type { Order, OrderStatus, Product, User, UserRole } from '../../store/St
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
-import { LayoutDashboard, Map as MapIcon, List, Plus, Edit, Trash2, X, Save, ShieldCheck, Camera, Upload, Truck, Store, MessageSquare, Settings, Navigation, MapPin } from 'lucide-react';
+import { LayoutDashboard, Map as MapIcon, List, Plus, Edit, Trash2, X, Save, ShieldCheck, Camera, Upload, Truck, Store, MessageSquare, Settings, Navigation, MapPin, BarChart3 } from 'lucide-react';
+import { Reports } from './Reports';
 
 // Fix Leaflet's default icon issue in React
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -37,7 +38,7 @@ export const Dashboard: React.FC = () => {
     deliveryFee, setGlobalDeliveryFee
   } = useStore();
   
-  const [activeTab, setActiveTab] = useState<'orders' | 'products' | 'users' | 'settings'>('orders');
+  const [activeTab, setActiveTab] = useState<'orders' | 'products' | 'users' | 'settings' | 'reports'>('orders');
   const [viewMode, setViewMode] = useState<'list' | 'map'>('list');
   const [showMapOrderId, setShowMapOrderId] = useState<string | null>(null);
   
@@ -129,6 +130,7 @@ export const Dashboard: React.FC = () => {
             <div className="flex gap-1 bg-gray-50 p-1 overflow-x-auto no-scrollbar" style={{ borderRadius: '14px', border: '1px solid #F3F4F6' }}>
               <TabButton active={activeTab === 'orders'} onClick={() => setActiveTab('orders')} label="Orders" icon={<List size={16} />} />
               <TabButton active={activeTab === 'products'} onClick={() => setActiveTab('products')} label="Stock" icon={<Store size={16} />} />
+              {isSuperuser && <TabButton active={activeTab === 'reports'} onClick={() => setActiveTab('reports')} label="Reports" icon={<BarChart3 size={16} />} />}
               {isSuperuser && <TabButton active={activeTab === 'users'} onClick={() => setActiveTab('users')} label="Team" icon={<ShieldCheck size={16} />} />}
               {isSuperuser && <TabButton active={activeTab === 'settings'} onClick={() => setActiveTab('settings')} label="Settings" icon={<Settings size={16} />} />}
             </div>
@@ -156,6 +158,7 @@ export const Dashboard: React.FC = () => {
       </div>
 
       <div style={{ padding: '1.5rem' }}>
+        {activeTab === 'reports' && isSuperuser && <Reports />}
         {activeTab === 'orders' && (
           <div className="animate-slide-up">
             <div className="flex justify-between items-center mb-4">

@@ -34,7 +34,7 @@ export const OrderPage: React.FC = () => {
     const product = products.find(p => p.id === item.productId);
     return sum + (product?.price || 0) * item.quantity;
   }, 0);
-  
+
   // Delivery fee logic: if delivery is chosen, calculate per selected item or flat? 
   // Previous logic was globalDeliveryFee * quantity. We'll do globalDeliveryFee * total_selected_quantity
   const totalSelectedQuantity = selectedCartItems.reduce((sum, item) => sum + item.quantity, 0);
@@ -155,10 +155,10 @@ export const OrderPage: React.FC = () => {
               return (
                 <div key={item.productId} className="product-card" style={{ padding: '1.25rem', flexDirection: 'row', alignItems: 'center', gap: '1rem', border: item.selected ? '1px solid var(--color-primary)' : '1px solid #F3F4F6', opacity: item.selected ? 1 : 0.7 }}>
                   {/* Checkbox */}
-                  <div 
+                  <div
                     onClick={() => updateCartItem(item.productId, { selected: !item.selected })}
-                    style={{ 
-                      width: '24px', height: '24px', borderRadius: '6px', 
+                    style={{
+                      width: '24px', height: '24px', borderRadius: '6px',
                       border: `2px solid ${item.selected ? 'var(--color-primary)' : '#D1D5DB'}`,
                       background: item.selected ? 'var(--color-primary)' : 'transparent',
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -182,7 +182,7 @@ export const OrderPage: React.FC = () => {
                     <h3 style={{ fontSize: '1rem', fontWeight: 700, margin: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{product.name}</h3>
                     <p className="text-muted text-xs mb-1">₱{product.price.toFixed(2)} each</p>
                     <div className="flex items-center gap-2">
-                       <div className="flex items-center gap-2 bg-gray-50 rounded-lg p-1 border border-gray-100">
+                      <div className="flex items-center gap-2 bg-gray-50 rounded-lg p-1 border border-gray-100">
                         <button type="button" onClick={() => updateCartItem(item.productId, { quantity: Math.max(1, item.quantity - 1) })} style={{ width: '24px', height: '24px', borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'white', border: '1px solid #E5E7EB' }}>
                           <Minus size={12} />
                         </button>
@@ -196,7 +196,7 @@ export const OrderPage: React.FC = () => {
                       </button>
                     </div>
                   </div>
-                  
+
                   {/* Item Total */}
                   <div style={{ textAlign: 'right', fontWeight: 800, color: item.selected ? 'var(--color-primary)' : '#9CA3AF' }}>
                     ₱{(product.price * item.quantity).toFixed(2)}
@@ -229,10 +229,10 @@ export const OrderPage: React.FC = () => {
                   {orderType === 'delivery' && <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: 'var(--color-primary)' }}></div>}
                 </div>
                 <div>
-                  <div className="flex items-center gap-1 font-bold text-sm">
-                    <Truck size={18} className="text-primary" /> Delivery
+                  <div className="flex items-center gap-2 font-bold text-sm">
+                    <Truck size={20} className="text-primary" /> Delivery + ₱{deliveryFee.toFixed(2)}
                   </div>
-                  <div className="text-xs text-muted">Refill + Transport</div>
+
                 </div>
               </div>
 
@@ -255,10 +255,10 @@ export const OrderPage: React.FC = () => {
                   {orderType === 'pickup' && <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: 'var(--color-primary)' }}></div>}
                 </div>
                 <div>
-                  <div className="flex items-center gap-1 font-bold text-sm">
-                    <Store size={18} className="text-primary" /> Pickup
+                  <div className="flex items-center gap-2 font-bold text-sm">
+                    <Store size={20} className="text-primary" /> Pickup
                   </div>
-                  <div className="text-xs text-muted">Free Refill Only</div>
+
                 </div>
               </div>
             </div>
@@ -268,11 +268,11 @@ export const OrderPage: React.FC = () => {
           {orderType === 'delivery' && (
             <div>
               <h3 className="text-sm font-bold uppercase tracking-wider text-muted mb-4">Delivery Location</h3>
-              
+
               <div style={{ height: '200px', borderRadius: '16px', overflow: 'hidden', marginBottom: '1rem', border: '1px solid var(--color-border)', position: 'relative' }}>
-                <MapContainer 
-                  center={userCoords ? [userCoords.lat, userCoords.lng] : [14.5995, 120.9842]} 
-                  zoom={15} 
+                <MapContainer
+                  center={userCoords ? [userCoords.lat, userCoords.lng] : [14.5995, 120.9842]}
+                  zoom={15}
                   style={{ height: '100%', width: '100%' }}
                   zoomControl={false}
                 >
@@ -281,8 +281,8 @@ export const OrderPage: React.FC = () => {
                   {userCoords && (
                     <>
                       <ChangeView center={[userCoords.lat, userCoords.lng]} />
-                      <Marker 
-                        position={[userCoords.lat, userCoords.lng]} 
+                      <Marker
+                        position={[userCoords.lat, userCoords.lng]}
                         draggable={true}
                         eventHandlers={{
                           dragend: (e) => {
@@ -377,10 +377,10 @@ export const OrderPage: React.FC = () => {
             </div>
 
             <div style={{ padding: '0 1.5rem 1.5rem' }}>
-              <button 
-                type="submit" 
-                disabled={loading || selectedCartItems.length === 0} 
-                className="btn btn-primary w-full" 
+              <button
+                type="submit"
+                disabled={loading || selectedCartItems.length === 0}
+                className="btn btn-primary w-full"
                 style={{ padding: '1.125rem', fontSize: '1.125rem', borderRadius: '16px', opacity: (loading || selectedCartItems.length === 0) ? 0.6 : 1 }}
               >
                 {loading ? 'Processing...' : selectedCartItems.length === 0 ? 'Select items to checkout' : `Place Order — ₱${totalAmount.toFixed(2)}`}

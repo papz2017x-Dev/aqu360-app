@@ -85,6 +85,7 @@ interface AppState {
   logout: () => Promise<void>;
   updateUserRole: (userId: string, role: UserRole) => Promise<void>;
   updateProfile: (userId: string, data: Partial<User>) => Promise<void>;
+  deleteAccount: (userId: string) => Promise<void>;
 }
 
 const defaultProducts: Omit<Product, 'id'>[] = [
@@ -208,6 +209,11 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     if (currentUser?.id === userId) setCurrentUser(prev => prev ? { ...prev, ...data } : null);
   };
 
+  const deleteAccount = async (userId: string) => {
+    await deleteDoc(doc(db, 'users', userId));
+    await logout();
+  };
+
   // Order methods
   const addOrder = async (orderData: Omit<Order, 'id' | 'createdAt' | 'status'>) => {
     await addDoc(collection(db, 'orders'), {
@@ -272,7 +278,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       products, orders, users, currentUser, authLoading, deliveryFee, cart,
       setGlobalDeliveryFee, addOrder, updateOrderStatus, deleteOrder,
       addProduct, updateProduct, deleteProduct,
-      signup, login, logout, updateUserRole, updateProfile,
+      signup, login, logout, updateUserRole, updateProfile, deleteAccount,
       addToCart, removeFromCart, updateCartItem, clearSelectedFromCart
     }}>
       {children}

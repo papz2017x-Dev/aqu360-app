@@ -1,4 +1,15 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import {
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  signOut,
+  onAuthStateChanged,
+} from 'firebase/auth';
+import {
+  collection, doc, setDoc, addDoc, updateDoc,
+  deleteDoc, onSnapshot, query, orderBy, getDoc, getDocs,
+} from 'firebase/firestore';
+import { auth, db } from '../firebase';
 
 export interface Product {
   id: string;
@@ -38,7 +49,6 @@ export type UserRole = 'user' | 'admin' | 'superuser';
 export interface User {
   id: string;
   email: string;
-  password?: string; // Mock password
   name: string;
   phone: string;
   address: string;
@@ -50,197 +60,176 @@ interface AppState {
   orders: Order[];
   users: User[];
   currentUser: User | null;
+  authLoading: boolean;
   deliveryFee: number;
-  setGlobalDeliveryFee: (fee: number) => void;
-  addOrder: (order: Omit<Order, 'id' | 'createdAt' | 'status'>) => void;
-  updateOrderStatus: (orderId: string, status: OrderStatus) => void;
-  deleteOrder: (orderId: string) => void;
-  addProduct: (product: Omit<Product, 'id'>) => void;
-  updateProduct: (product: Product) => void;
-  deleteProduct: (productId: string) => void;
-  signup: (userData: Omit<User, 'id' | 'role'>) => void;
-  login: (email: string, pass: string) => boolean;
-  logout: () => void;
-  updateUserRole: (userId: string, role: UserRole) => void;
-  updateProfile: (userId: string, data: Partial<User>) => void;
+  setGlobalDeliveryFee: (fee: number) => Promise<void>;
+  addOrder: (order: Omit<Order, 'id' | 'createdAt' | 'status'>) => Promise<void>;
+  updateOrderStatus: (orderId: string, status: OrderStatus) => Promise<void>;
+  deleteOrder: (orderId: string) => Promise<void>;
+  addProduct: (product: Omit<Product, 'id'>) => Promise<void>;
+  updateProduct: (product: Product) => Promise<void>;
+  deleteProduct: (productId: string) => Promise<void>;
+  signup: (userData: { name: string; email: string; phone: string; address: string; password: string }) => Promise<void>;
+  login: (email: string, pass: string) => Promise<boolean>;
+  logout: () => Promise<void>;
+  updateUserRole: (userId: string, role: UserRole) => Promise<void>;
+  updateProfile: (userId: string, data: Partial<User>) => Promise<void>;
 }
 
-const defaultProducts: Product[] = [
-  {
-    id: 'p1',
-    name: '5-Gallon Round Bottle',
-    description: 'Standard 5-gallon round bottle, purified drinking water.',
-    price: 40,
-    image: 'https://images.unsplash.com/photo-1523362628745-0c100150b504?auto=format&fit=crop&w=300&q=80',
-  },
-  {
-    id: 'p2',
-    name: '5-Gallon Slim Bottle (With Faucet)',
-    description: 'Slim type container with built-in faucet for easy dispensing.',
-    price: 45,
-    image: 'https://images.unsplash.com/photo-1623508154947-2b7e1c8d5b1f?auto=format&fit=crop&w=300&q=80',
-  },
-  {
-    id: 'p3',
-    name: 'Alkaline Water (5-Gallon)',
-    description: 'Premium alkaline water for health enthusiasts.',
-    price: 70,
-    image: 'https://images.unsplash.com/photo-1548839140-29a749e1bc4e?auto=format&fit=crop&w=300&q=80',
-  }
-];
-
-const defaultUsers: User[] = [
-  {
-    id: 's-1',
-    email: 'admin@aqu360.com',
-    password: 'admin123',
-    name: 'Main Admin',
-    phone: '09000000000',
-    address: 'HQ Manila',
-    role: 'superuser'
-  }
+const defaultProducts: Omit<Product, 'id'>[] = [
+  { name: '5-Gallon Round Bottle', description: 'Standard 5-gallon round bottle, purified drinking water.', price: 40, image: 'https://images.unsplash.com/photo-1523362628745-0c100150b504?auto=format&fit=crop&w=300&q=80' },
+  { name: '5-Gallon Slim Bottle (With Faucet)', description: 'Slim type container with built-in faucet for easy dispensing.', price: 45, image: 'https://images.unsplash.com/photo-1623508154947-2b7e1c8d5b1f?auto=format&fit=crop&w=300&q=80' },
+  { name: 'Alkaline Water (5-Gallon)', description: 'Premium alkaline water for health enthusiasts.', price: 70, image: 'https://images.unsplash.com/photo-1548839140-29a749e1bc4e?auto=format&fit=crop&w=300&q=80' },
 ];
 
 const StoreContext = createContext<AppState | undefined>(undefined);
 
 export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [products, setProducts] = useState<Product[]>(() => {
-    const saved = localStorage.getItem('aqu360_products');
-    return saved ? JSON.parse(saved) : defaultProducts;
-  });
-  
-  const [orders, setOrders] = useState<Order[]>(() => {
-    const saved = localStorage.getItem('aqu360_orders');
-    return saved ? JSON.parse(saved) : [];
-  });
+  const [products, setProducts] = useState<Product[]>([]);
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [authLoading, setAuthLoading] = useState(true);
+  const [deliveryFee, setDeliveryFeeState] = useState(50);
 
-  const [users, setUsers] = useState<User[]>(() => {
-    const saved = localStorage.getItem('aqu360_users');
-    return saved ? JSON.parse(saved) : defaultUsers;
-  });
-
-  const [currentUser, setCurrentUser] = useState<User | null>(() => {
-    const saved = localStorage.getItem('aqu360_session');
-    return saved ? JSON.parse(saved) : null;
-  });
-
-  const [deliveryFee, setDeliveryFee] = useState<number>(() => {
-    const saved = localStorage.getItem('aqu360_delivery_fee');
-    return saved ? Number(saved) : 50;
-  });
-
+  // Seed default data on first run
   useEffect(() => {
-    localStorage.setItem('aqu360_products', JSON.stringify(products));
-  }, [products]);
-
-  useEffect(() => {
-    localStorage.setItem('aqu360_orders', JSON.stringify(orders));
-  }, [orders]);
-
-  useEffect(() => {
-    localStorage.setItem('aqu360_users', JSON.stringify(users));
-  }, [users]);
-
-  useEffect(() => {
-    localStorage.setItem('aqu360_session', JSON.stringify(currentUser));
-  }, [currentUser]);
-
-  useEffect(() => {
-    localStorage.setItem('aqu360_delivery_fee', deliveryFee.toString());
-  }, [deliveryFee]);
-
-  // Settings Methods
-  const setGlobalDeliveryFee = (fee: number) => setDeliveryFee(fee);
-
-  // Auth Methods
-  const signup = (userData: Omit<User, 'id' | 'role'>) => {
-    const newUser: User = {
-      ...userData,
-      id: 'u-' + Math.random().toString(36).substring(2, 9),
-      role: 'user'
+    const seed = async () => {
+      const snap = await getDocs(collection(db, 'products'));
+      if (snap.empty) {
+        for (const p of defaultProducts) await addDoc(collection(db, 'products'), p);
+      }
+      const cfg = await getDoc(doc(db, 'settings', 'config'));
+      if (!cfg.exists()) await setDoc(doc(db, 'settings', 'config'), { deliveryFee: 50 });
     };
-    setUsers(prev => [...prev, newUser]);
+    seed();
+  }, []);
+
+  // Firebase Auth listener
+  useEffect(() => {
+    const unsub = onAuthStateChanged(auth, async (firebaseUser) => {
+      if (firebaseUser) {
+        const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid));
+        if (userDoc.exists()) {
+          setCurrentUser({ id: firebaseUser.uid, ...userDoc.data() } as User);
+        }
+      } else {
+        setCurrentUser(null);
+      }
+      setAuthLoading(false);
+    });
+    return unsub;
+  }, []);
+
+  // Real-time listeners
+  useEffect(() => {
+    const unsub = onSnapshot(collection(db, 'products'), (snap) => {
+      setProducts(snap.docs.map(d => ({ id: d.id, ...d.data() } as Product)));
+    });
+    return unsub;
+  }, []);
+
+  useEffect(() => {
+    const q = query(collection(db, 'orders'), orderBy('createdAt', 'desc'));
+    const unsub = onSnapshot(q, (snap) => {
+      setOrders(snap.docs.map(d => ({ id: d.id, ...d.data() } as Order)));
+    });
+    return unsub;
+  }, []);
+
+  useEffect(() => {
+    const unsub = onSnapshot(collection(db, 'users'), (snap) => {
+      setUsers(snap.docs.map(d => ({ id: d.id, ...d.data() } as User)));
+    });
+    return unsub;
+  }, []);
+
+  useEffect(() => {
+    const unsub = onSnapshot(doc(db, 'settings', 'config'), (snap) => {
+      if (snap.exists()) setDeliveryFeeState(snap.data().deliveryFee ?? 50);
+    });
+    return unsub;
+  }, []);
+
+  // Auth methods
+  const signup = async (userData: { name: string; email: string; phone: string; address: string; password: string }) => {
+    const { password, ...profile } = userData;
+    const cred = await createUserWithEmailAndPassword(auth, userData.email, password);
+    const newProfile = { ...profile, role: 'user' as UserRole };
+    await setDoc(doc(db, 'users', cred.user.uid), newProfile);
+    setCurrentUser({ id: cred.user.uid, ...newProfile });
   };
 
-  const login = (email: string, pass: string): boolean => {
-    const user = users.find(u => u.email === email && u.password === pass);
-    if (user) {
-      setCurrentUser(user);
-      return true;
+  const login = async (email: string, pass: string): Promise<boolean> => {
+    try {
+      const cred = await signInWithEmailAndPassword(auth, email, pass);
+      const userDoc = await getDoc(doc(db, 'users', cred.user.uid));
+      if (userDoc.exists()) {
+        setCurrentUser({ id: cred.user.uid, ...userDoc.data() } as User);
+        return true;
+      }
+      return false;
+    } catch {
+      return false;
     }
-    return false;
   };
 
-  const logout = () => setCurrentUser(null);
-
-  const updateUserRole = (userId: string, role: UserRole) => {
-    setUsers(prev => prev.map(u => u.id === userId ? { ...u, role } : u));
+  const logout = async () => {
+    await signOut(auth);
+    setCurrentUser(null);
   };
 
-  const updateProfile = (userId: string, data: Partial<User>) => {
-    const updatedUsers = users.map(u => u.id === userId ? { ...u, ...data } : u);
-    setUsers(updatedUsers);
-    if (currentUser?.id === userId) {
-      setCurrentUser({ ...currentUser, ...data });
-    }
+  const updateUserRole = async (userId: string, role: UserRole) => {
+    await updateDoc(doc(db, 'users', userId), { role });
   };
 
-  // Order Methods
-  const addOrder = (orderData: Omit<Order, 'id' | 'createdAt' | 'status'>) => {
-    const newOrder: Order = {
+  const updateProfile = async (userId: string, data: Partial<User>) => {
+    await updateDoc(doc(db, 'users', userId), data as Record<string, unknown>);
+    if (currentUser?.id === userId) setCurrentUser(prev => prev ? { ...prev, ...data } : null);
+  };
+
+  // Order methods
+  const addOrder = async (orderData: Omit<Order, 'id' | 'createdAt' | 'status'>) => {
+    await addDoc(collection(db, 'orders'), {
       ...orderData,
-      userId: currentUser?.id,
-      id: Math.random().toString(36).substring(2, 9),
+      userId: currentUser?.id ?? '',
       status: 'pending',
       createdAt: new Date().toISOString(),
-    };
-    setOrders(prev => [newOrder, ...prev]);
+    });
   };
 
-  const updateOrderStatus = (orderId: string, status: OrderStatus) => {
-    setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status } : o));
+  const updateOrderStatus = async (orderId: string, status: OrderStatus) => {
+    await updateDoc(doc(db, 'orders', orderId), { status });
   };
 
-  const deleteOrder = (orderId: string) => {
-    setOrders(prev => prev.filter(o => o.id !== orderId));
+  const deleteOrder = async (orderId: string) => {
+    await deleteDoc(doc(db, 'orders', orderId));
   };
 
-  // Product Methods
-  const addProduct = (productData: Omit<Product, 'id'>) => {
-    const newProduct: Product = {
-      ...productData,
-      id: 'p-' + Math.random().toString(36).substring(2, 9),
-    };
-    setProducts(prev => [...prev, newProduct]);
+  // Product methods
+  const addProduct = async (productData: Omit<Product, 'id'>) => {
+    await addDoc(collection(db, 'products'), productData);
   };
 
-  const updateProduct = (updatedProduct: Product) => {
-    setProducts(prev => prev.map(p => p.id === updatedProduct.id ? updatedProduct : p));
+  const updateProduct = async (updatedProduct: Product) => {
+    const { id, ...data } = updatedProduct;
+    await updateDoc(doc(db, 'products', id), data);
   };
 
-  const deleteProduct = (productId: string) => {
-    setProducts(prev => prev.filter(p => p.id !== productId));
+  const deleteProduct = async (productId: string) => {
+    await deleteDoc(doc(db, 'products', productId));
+  };
+
+  const setGlobalDeliveryFee = async (fee: number) => {
+    await setDoc(doc(db, 'settings', 'config'), { deliveryFee: fee });
   };
 
   return (
-    <StoreContext.Provider value={{ 
-      products, 
-      orders, 
-      users,
-      currentUser,
-      deliveryFee,
-      setGlobalDeliveryFee,
-      addOrder, 
-      updateOrderStatus,
-      deleteOrder,
-      addProduct,
-      updateProduct,
-      deleteProduct,
-      signup,
-      login,
-      logout,
-      updateUserRole,
-      updateProfile
+    <StoreContext.Provider value={{
+      products, orders, users, currentUser, authLoading, deliveryFee,
+      setGlobalDeliveryFee, addOrder, updateOrderStatus, deleteOrder,
+      addProduct, updateProduct, deleteProduct,
+      signup, login, logout, updateUserRole, updateProfile,
     }}>
       {children}
     </StoreContext.Provider>
@@ -249,8 +238,6 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
 export const useStore = () => {
   const context = useContext(StoreContext);
-  if (!context) {
-    throw new Error('useStore must be used within a StoreProvider');
-  }
+  if (!context) throw new Error('useStore must be used within a StoreProvider');
   return context;
 };

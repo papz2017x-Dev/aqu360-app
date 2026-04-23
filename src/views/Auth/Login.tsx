@@ -9,13 +9,18 @@ export const Login: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (login(email, password)) {
+    setLoading(true);
+    setError('');
+    const success = await login(email, password);
+    if (success) {
       navigate('/');
     } else {
-      setError('Invalid email or password');
+      setError('Invalid email or password. Please try again.');
+      setLoading(false);
     }
   };
 
@@ -111,7 +116,7 @@ export const Login: React.FC = () => {
           </div>
 
           {/* Button Allowance */}
-          <button type="submit" className="btn btn-primary w-full mt-2" style={{
+          <button type="submit" disabled={loading} className="btn btn-primary w-full mt-2" style={{
             padding: '0.90rem',
             borderRadius: '20px',
             fontSize: '1.25rem',
@@ -120,9 +125,10 @@ export const Login: React.FC = () => {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            gap: '0.75rem'
+            gap: '0.75rem',
+            opacity: loading ? 0.7 : 1,
           }}>
-            <LogIn size={22} /> Sign In
+            {loading ? 'Signing in...' : <><LogIn size={22} /> Sign In</>}
           </button>
         </form>
         <div

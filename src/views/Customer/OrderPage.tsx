@@ -18,6 +18,7 @@ export const OrderPage: React.FC = () => {
   const [notes, setNotes] = useState('');
   const [orderComplete, setOrderComplete] = useState(false);
   const [userCoords, setUserCoords] = useState<{ lat: number; lng: number } | undefined>(undefined);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);
@@ -49,27 +50,34 @@ export const OrderPage: React.FC = () => {
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedProduct) return;
+    if (!selectedProduct || loading) return;
 
-    addOrder({
-      customerName,
-      contactNumber,
-      address,
-      orderType,
-      deliveryFee,
-      notes,
-      items: [{
-        productId: selectedProduct.id,
-        quantity,
-        price: selectedProduct.price
-      }],
-      totalAmount,
-      location: userCoords || { lat: 14.5995, lng: 120.9842 }
-    });
-    
-    setOrderComplete(true);
+    setLoading(true);
+    try {
+      await addOrder({
+        customerName,
+        contactNumber,
+        address,
+        orderType,
+        deliveryFee,
+        notes,
+        items: [{
+          productId: selectedProduct.id,
+          quantity,
+          price: selectedProduct.price
+        }],
+        totalAmount,
+        location: userCoords || { lat: 14.5995, lng: 120.9842 }
+      });
+      setOrderComplete(true);
+    } catch (error) {
+      console.error("Failed to place order:", error);
+      alert("Failed to place order. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   if (orderComplete) {
@@ -251,8 +259,8 @@ export const OrderPage: React.FC = () => {
 
           {/* Fixed Bottom Button */}
           <div style={{ position: 'fixed', bottom: '5rem', left: 0, right: 0, padding: '1.5rem', background: 'white', borderTop: '1px solid var(--color-border)', zIndex: 60 }}>
-            <button type="submit" className="btn btn-primary w-full" style={{ padding: '1rem', fontSize: '1.125rem', borderRadius: '14px' }}>
-              Place Order — ₱{totalAmount.toFixed(2)}
+            <button type="submit" disabled={loading} className="btn btn-primary w-full" style={{ padding: '1rem', fontSize: '1.125rem', borderRadius: '14px', opacity: loading ? 0.7 : 1 }}>
+              {loading ? 'Placing Order...' : `Place Order — ₱${totalAmount.toFixed(2)}`}
             </button>
           </div>
         </form>

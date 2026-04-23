@@ -18,15 +18,15 @@ export const Profile: React.FC = () => {
     return <div className="text-center p-8">Please login to view profile.</div>;
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    updateProfile(currentUser.id, formData);
+    await updateProfile(currentUser.id, formData);
     setIsSaved(true);
     setTimeout(() => setIsSaved(false), 3000);
   };
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    await logout();
     navigate('/login');
   };
 

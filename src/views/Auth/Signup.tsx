@@ -13,11 +13,20 @@ export const Signup: React.FC = () => {
     phone: '',
     address: ''
   });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    signup(formData);
-    navigate('/login');
+    setLoading(true);
+    setError('');
+    try {
+      await signup(formData);
+      navigate('/');
+    } catch (err: any) {
+      setError(err.message || 'Failed to create account. Please try again.');
+      setLoading(false);
+    }
   };
 
   return (
@@ -54,6 +63,12 @@ export const Signup: React.FC = () => {
         boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.08)' 
       }}>
         <form onSubmit={handleSubmit} className="flex-col gap-6" style={{ display: 'flex' }}>
+          
+          {error && (
+            <div style={{ padding: '1.25rem', background: '#FEF2F2', color: '#DC2626', borderRadius: '16px', fontSize: '0.875rem', textAlign: 'center', fontWeight: 700, border: '1px solid #FEE2E2' }}>
+              {error}
+            </div>
+          )}
 
           <div>
             <label className="text-sm font-black text-gray-700 mb-2.5 block uppercase tracking-wider ml-1">Full Name</label>
@@ -135,14 +150,15 @@ export const Signup: React.FC = () => {
             </div>
           </div>
 
-          <button type="submit" className="btn btn-primary w-full mt-6" style={{ 
+          <button type="submit" disabled={loading} className="btn btn-primary w-full mt-6" style={{ 
             padding: '1.25rem', 
             borderRadius: '20px', 
             fontSize: '1.25rem', 
             fontWeight: 800,
-            boxShadow: '0 10px 15px -3px rgba(37, 169, 226, 0.35)' 
+            boxShadow: '0 10px 15px -3px rgba(37, 169, 226, 0.35)',
+            opacity: loading ? 0.7 : 1
           }}>
-            Create Account
+            {loading ? 'Creating Account...' : 'Create Account'}
           </button>
         </form>
 

@@ -1,9 +1,8 @@
 import React, { useState } from 'react';
 import { useStore } from '../../store/Store';
-import { 
-  LayoutDashboard, List, Store, BarChart3, 
-  ShieldCheck, Settings, Truck, Package, 
-  ChevronRight, TrendingUp 
+import {
+  LayoutDashboard, List, Store, BarChart3,
+  ShieldCheck, Settings, Truck, TrendingUp
 } from 'lucide-react';
 import { ManageOrders } from './ManageOrders';
 import { ManageStock } from './ManageStock';
@@ -60,62 +59,48 @@ export const Dashboard: React.FC = () => {
       <div className="flex flex-col gap-4">
         <h3 className="text-[0.7rem] font-black text-muted uppercase tracking-[0.2em] px-2 mb-1">Service Modules</h3>
         
-        <HubButton 
-          onClick={() => setActiveView('orders')} 
-          icon={<List size={24} />} 
-          title="Orders & Logistics" 
-          desc="Track deliveries and pickups" 
-          badge={pendingOrders > 0 ? `${pendingOrders} NEW` : undefined}
-          color="#3B82F6"
-        />
-        
-        <HubButton 
-          onClick={() => setActiveView('stock')} 
-          icon={<Store size={24} />} 
-          title="Stock Inventory" 
-          desc="Manage products and pricing" 
-          color="#8B5CF6"
-        />
-
-        {isSuperuser && (
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
           <HubButton 
-            onClick={() => setActiveView('reports')} 
-            icon={<BarChart3 size={24} />} 
-            title="Sales Analytics" 
-            desc="Deep dive into your revenue" 
-            color="#10B981"
+            onClick={() => setActiveView('orders')} 
+            icon={<List size={28} />} 
+            title="Orders" 
+            badge={pendingOrders > 0 ? `${pendingOrders} NEW` : undefined}
+            color="#3B82F6"
           />
-        )}
-
-        {isSuperuser && (
+          
           <HubButton 
-            onClick={() => setActiveView('team')} 
-            icon={<ShieldCheck size={24} />} 
-            title="Team & Access" 
-            desc="Control staff permissions" 
-            color="#F59E0B"
+            onClick={() => setActiveView('stock')} 
+            icon={<Store size={28} />} 
+            title="Stock" 
+            color="#8B5CF6"
           />
-        )}
 
-        {isSuperuser && (
-          <HubButton 
-            onClick={() => setActiveView('settings')} 
-            icon={<Settings size={24} />} 
-            title="App Settings" 
-            desc="Configure global parameters" 
-            color="#6B7280"
-          />
-        )}
-      </div>
+          {isSuperuser && (
+            <HubButton 
+              onClick={() => setActiveView('reports')} 
+              icon={<BarChart3 size={28} />} 
+              title="Reports" 
+              color="#10B981"
+            />
+          )}
 
-      {/* Quick Info Card */}
-      <div className="mt-8 p-6 bg-blue-50 rounded-[32px] border border-blue-100 flex items-center gap-4">
-        <div style={{ background: 'white', padding: '12px', borderRadius: '16px', color: 'var(--color-primary)' }}>
-          <Package size={24} />
-        </div>
-        <div style={{ flex: 1 }}>
-          <div style={{ fontWeight: 900, color: '#1E40AF', fontSize: '0.95rem' }}>Need help?</div>
-          <p style={{ fontSize: '0.75rem', color: '#60A5FA', fontWeight: 600, margin: 0 }}>Check the documentation for advanced admin tools.</p>
+          {isSuperuser && (
+            <HubButton 
+              onClick={() => setActiveView('team')} 
+              icon={<ShieldCheck size={28} />} 
+              title="Team" 
+              color="#F59E0B"
+            />
+          )}
+
+          {isSuperuser && (
+            <HubButton 
+              onClick={() => setActiveView('settings')} 
+              icon={<Settings size={28} />} 
+              title="Settings" 
+              color="#6B7280"
+            />
+          )}
         </div>
       </div>
     </div>
@@ -125,48 +110,46 @@ export const Dashboard: React.FC = () => {
 interface HubButtonProps {
   icon: React.ReactNode;
   title: string;
-  desc: string;
   onClick: () => void;
   color: string;
   badge?: string;
 }
 
-const HubButton = ({ icon, title, desc, onClick, color, badge }: HubButtonProps) => (
+const HubButton = ({ icon, title, onClick, color, badge }: HubButtonProps) => (
   <button 
     onClick={onClick}
-    className="product-card w-full p-5 flex items-center gap-5 transition-all duration-300 active:scale-95 bg-white border border-gray-100"
-    style={{ borderRadius: '28px', textAlign: 'left' }}
+    className="product-card flex flex-col items-center justify-center p-6 transition-all duration-300 active:scale-95 bg-white border border-gray-100"
+    style={{ borderRadius: '28px', textAlign: 'center', minHeight: '140px', gap: '12px', position: 'relative' }}
   >
+    {badge && (
+      <span style={{ 
+        position: 'absolute',
+        top: '12px',
+        right: '12px',
+        fontSize: '0.6rem', 
+        fontWeight: 900, 
+        background: '#EF4444', 
+        color: 'white', 
+        padding: '2px 8px', 
+        borderRadius: '10px',
+        letterSpacing: '0.05em',
+        boxShadow: '0 4px 6px -1px rgba(239, 68, 68, 0.2)'
+      }}>
+        {badge}
+      </span>
+    )}
     <div style={{ 
       background: `${color}15`, 
       color: color, 
-      padding: '12px', 
-      borderRadius: '20px',
+      padding: '16px', 
+      borderRadius: '24px',
       display: 'flex',
       alignItems: 'center',
-      justifyContent: 'center'
+      justifyContent: 'center',
+      marginBottom: '4px'
     }}>
       {icon}
     </div>
-    <div style={{ flex: 1 }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '2px' }}>
-        <span style={{ fontWeight: 900, fontSize: '1rem', color: '#111827' }}>{title}</span>
-        {badge && (
-          <span style={{ 
-            fontSize: '0.6rem', 
-            fontWeight: 900, 
-            background: '#EF4444', 
-            color: 'white', 
-            padding: '2px 8px', 
-            borderRadius: '10px',
-            letterSpacing: '0.05em'
-          }}>
-            {badge}
-          </span>
-        )}
-      </div>
-      <div style={{ fontSize: '0.75rem', color: '#6B7280', fontWeight: 600 }}>{desc}</div>
-    </div>
-    <ChevronRight size={20} className="text-gray-300" />
+    <div style={{ fontWeight: 900, fontSize: '1rem', color: '#111827' }}>{title}</div>
   </button>
 );

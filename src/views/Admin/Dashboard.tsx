@@ -4,7 +4,7 @@ import type { Order, OrderStatus, Product, User, UserRole } from '../../store/St
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
-import { LayoutDashboard, Map as MapIcon, List, Plus, Edit, Trash2, X, Save, ShieldCheck, Camera, Upload, Truck, Store, MessageSquare, Settings } from 'lucide-react';
+import { LayoutDashboard, Map as MapIcon, List, Plus, Edit, Trash2, X, Save, ShieldCheck, Camera, Upload, Truck, Store, MessageSquare, Settings, Navigation } from 'lucide-react';
 
 // Fix Leaflet's default icon issue in React
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -39,6 +39,7 @@ export const Dashboard: React.FC = () => {
   
   const [activeTab, setActiveTab] = useState<'orders' | 'products' | 'users' | 'settings'>('orders');
   const [viewMode, setViewMode] = useState<'list' | 'map'>('list');
+  const [showMapOrderId, setShowMapOrderId] = useState<string | null>(null);
   
   // Product Form State
   const [isEditing, setIsEditing] = useState<string | null>(null);
@@ -159,7 +160,17 @@ export const Dashboard: React.FC = () => {
             {viewMode === 'list' ? (
               <div className="flex-col gap-4" style={{ display: 'flex' }}>
                 {orders.map((order: Order) => (
-                  <div key={order.id} className="product-card" style={{ padding: '1.25rem' }}>
+                  <div 
+                    key={order.id} 
+                    className="product-card" 
+                    style={{ 
+                      padding: '1.25rem', 
+                      cursor: 'pointer',
+                      border: showMapOrderId === order.id ? '2px solid var(--color-primary)' : '1px solid #F3F4F6',
+                      transition: 'all 0.2s ease'
+                    }}
+                    onClick={() => setShowMapOrderId(showMapOrderId === order.id ? null : order.id)}
+                  >
                     <div className="flex justify-between items-start mb-3">
                       <div>
                         <div className="font-bold text-lg">{order.customerName}</div>
@@ -171,6 +182,15 @@ export const Dashboard: React.FC = () => {
                       <span className="font-black text-primary">₱{order.totalAmount.toFixed(2)}</span>
                     </div>
                     <p className="text-sm text-muted mb-2">{order.address}</p>
+
+                    {showMapOrderId === order.id && order.location && (
+                      <div className="animate-slide-up" style={{ height: '200px', width: '100%', marginBottom: '1rem', borderRadius: '12px', overflow: 'hidden', border: '1px solid #E5E7EB' }}>
+                        <MapContainer center={[order.location.lat, order.location.lng]} zoom={15} style={{ height: '100%', width: '100%' }} zoomControl={false}>
+                          <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+                          <Marker position={[order.location.lat, order.location.lng]} icon={getStatusMarker(order.status)} />
+                        </MapContainer>
+                      </div>
+                    )}
                     <div className="mb-4 text-xs font-bold text-gray-600 bg-gray-50 p-2 rounded-lg">
                       {order.items.map((item, idx) => {
                         const product = products.find(p => p.id === item.productId);
@@ -192,7 +212,16 @@ export const Dashboard: React.FC = () => {
 
                     <div className="flex items-center justify-between pt-4 border-t border-gray-50">
                       <span className="text-xs font-bold text-muted">#{order.id.toUpperCase()}</span>
-                      <select className="input" style={{ width: 'auto', padding: '0.4rem 0.8rem', height: 'auto', fontSize: '0.8rem', fontWeight: 700, borderRadius: '8px' }} value={order.status} onChange={(e) => updateOrderStatus(order.id, e.target.value as OrderStatus)}>
+                      <select 
+                        className="input" 
+                        style={{ width: 'auto', padding: '0.4rem 0.8rem', height: 'auto', fontSize: '0.8rem', fontWeight: 700, borderRadius: '8px' }} 
+                        value={order.status} 
+                        onClick={(e) => e.stopPropagation()}
+                        onChange={(e) => {
+                          e.stopPropagation();
+                          updateOrderStatus(order.id, e.target.value as OrderStatus);
+                        }}
+                      >
                         {statuses.map(s => <option key={s} value={s}>{s.replace('-', ' ')}</option>)}
                       </select>
                     </div>

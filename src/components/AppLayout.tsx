@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { Outlet, NavLink, useLocation } from 'react-router-dom';
-import { ShoppingCart, ClipboardList, User, Droplets, LayoutDashboard, HomeIcon } from 'lucide-react';
+import { ShoppingCart, ClipboardList, User, LayoutDashboard, HomeIcon } from 'lucide-react';
 import { useStore } from '../store/Store';
 
 export const AppLayout = () => {

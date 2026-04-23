@@ -1,12 +1,10 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useStore } from '../../store/Store';
 import type { Product } from '../../store/Store';
 import { Search, Plus } from 'lucide-react';
 
 export const Home: React.FC = () => {
   const { products, addToCart } = useStore();
-  const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
   const [showAddedToast, setShowAddedToast] = useState(false);
 

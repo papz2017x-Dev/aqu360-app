@@ -170,7 +170,18 @@ export const Dashboard: React.FC = () => {
                       </div>
                       <span className="font-black text-primary">₱{order.totalAmount.toFixed(2)}</span>
                     </div>
-                    <p className="text-sm text-muted mb-4">{order.address}</p>
+                    <p className="text-sm text-muted mb-2">{order.address}</p>
+                    <div className="mb-4 text-xs font-bold text-gray-600 bg-gray-50 p-2 rounded-lg">
+                      {order.items.map((item, idx) => {
+                        const product = products.find(p => p.id === item.productId);
+                        return (
+                          <div key={idx} className="flex justify-between">
+                            <span>{item.quantity}x {product?.name || 'Product'}</span>
+                            <span>₱{(item.price * item.quantity).toFixed(2)}</span>
+                          </div>
+                        );
+                      })}
+                    </div>
                     
                     {order.notes && (
                       <div className="mb-4 p-3 bg-gray-50 rounded-lg flex gap-2 items-start border border-gray-100">

@@ -5,21 +5,44 @@ import type { Product } from '../../store/Store';
 import { Search, Plus } from 'lucide-react';
 
 export const Home: React.FC = () => {
-  const { products } = useStore();
+  const { products, addToCart } = useStore();
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
+  const [showAddedToast, setShowAddedToast] = useState(false);
 
   const filteredProducts = products.filter(p =>
     p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     p.description.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const handleOrder = (product: Product) => {
-    navigate(`/order?productId=${product.id}`);
+  const handleAddToCart = (product: Product) => {
+    addToCart(product.id);
+    setShowAddedToast(true);
+    setTimeout(() => setShowAddedToast(false), 2000);
   };
 
   return (
     <div className="animate-slide-up">
+      {/* Toast Notification */}
+      {showAddedToast && (
+        <div style={{
+          position: 'fixed',
+          bottom: '6rem',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          background: 'var(--color-primary)',
+          color: 'white',
+          padding: '0.75rem 1.5rem',
+          borderRadius: '50px',
+          zIndex: 1000,
+          boxShadow: 'var(--shadow-lg)',
+          fontWeight: 600,
+          fontSize: '0.875rem'
+        }}>
+          Item added to cart!
+        </div>
+      )}
+
       {/* Hero Header matching the image */}
       <div className="aqua-header" style={{ padding: '2rem 1.5rem 2.5rem' }}>
         <div className="flex items-center gap-4">
@@ -85,10 +108,13 @@ export const Home: React.FC = () => {
                   <img src="/a360.png" alt="Placeholder" style={{ width: '64px', opacity: 0.15 }} />
                 )}
               </div>
-              <div className="product-info" style={{ padding: '1.25rem' }}>
+              <div className="product-info"
+                style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', height: '100%' }}>
+
                 <div>
-                  <h3 style={{ fontSize: '1.1rem', fontWeight: 800, marginBottom: '0.25rem', color: '#111827', lineHeight: '1.3' }}>{product.name}</h3>
-                  <p className="text-muted" style={{ fontSize: '0.8rem', fontWeight: 600, marginBottom: '0.75rem', color: 'var(--color-primary)' }}>18.9L • Refill</p>
+                  <h3 style={{ fontSize: '1.1rem', fontWeight: 800, marginBottom: '0.25rem', color: '#111827', lineHeight: '1.3' }}>
+                    {product.name}
+                  </h3>
                   <p className="text-muted" style={{
                     fontSize: '0.8rem',
                     display: '-webkit-box',
@@ -96,23 +122,32 @@ export const Home: React.FC = () => {
                     WebkitBoxOrient: 'vertical',
                     overflow: 'hidden',
                     lineHeight: '1.5',
-                    color: '#6B7280'
+                    color: 'var(--color-primary)'
                   }}>
                     {product.description}
                   </p>
                 </div>
 
-                <div className="flex justify-between items-end mt-6">
-                  <div className="product-price" style={{ fontSize: '1.35rem' }}>₱{product.price.toFixed(2)}</div>
+                {/* Bottom row: price + button inline */}
+                <div className="flex justify-between items-center mt-6">
+                  <div className="product-price" style={{ fontSize: '1.35rem' }}>
+                    ₱{product.price.toFixed(2)}
+                  </div>
                   <button
                     className="add-btn"
-                    style={{ width: '3rem', height: '3rem', boxShadow: '0 10px 15px -3px rgba(37, 169, 226, 0.3)' }}
-                    onClick={() => handleOrder(product)}
+                    style={{
+                      width: '3rem',
+                      height: '3rem',
+                      boxShadow: '0 10px 15px -3px rgba(37, 169, 226, 0.3)',
+                      borderRadius: '50%'
+                    }}
+                    onClick={() => handleAddToCart(product)}
                   >
                     <Plus size={22} />
                   </button>
                 </div>
               </div>
+
             </div>
           ))}
         </div>

@@ -46,6 +46,12 @@ export interface Order {
 
 export type UserRole = 'user' | 'admin' | 'superuser';
 
+export interface CartItem {
+  productId: string;
+  quantity: number;
+  selected: boolean;
+}
+
 export interface User {
   id: string;
   email: string;
@@ -62,6 +68,11 @@ interface AppState {
   currentUser: User | null;
   authLoading: boolean;
   deliveryFee: number;
+  cart: CartItem[];
+  addToCart: (productId: string) => void;
+  removeFromCart: (productId: string) => void;
+  updateCartItem: (productId: string, updates: Partial<CartItem>) => void;
+  clearSelectedFromCart: () => void;
   setGlobalDeliveryFee: (fee: number) => Promise<void>;
   addOrder: (order: Omit<Order, 'id' | 'createdAt' | 'status'>) => Promise<void>;
   updateOrderStatus: (orderId: string, status: OrderStatus) => Promise<void>;
@@ -91,6 +102,15 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
   const [deliveryFee, setDeliveryFeeState] = useState(50);
+  const [cart, setCart] = useState<CartItem[]>(() => {
+    const saved = localStorage.getItem('aqu360_cart');
+    return saved ? JSON.parse(saved) : [];
+  });
+
+  // Persist cart
+  useEffect(() => {
+    localStorage.setItem('aqu360_cart', JSON.stringify(cart));
+  }, [cart]);
 
   // Seed default data on first run
   useEffect(() => {
@@ -224,12 +244,36 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     await setDoc(doc(db, 'settings', 'config'), { deliveryFee: fee });
   };
 
+  // Cart Methods
+  const addToCart = (productId: string) => {
+    setCart(prev => {
+      const existing = prev.find(i => i.productId === productId);
+      if (existing) {
+        return prev.map(i => i.productId === productId ? { ...i, quantity: i.quantity + 1, selected: true } : i);
+      }
+      return [...prev, { productId, quantity: 1, selected: true }];
+    });
+  };
+
+  const removeFromCart = (productId: string) => {
+    setCart(prev => prev.filter(i => i.productId !== productId));
+  };
+
+  const updateCartItem = (productId: string, updates: Partial<CartItem>) => {
+    setCart(prev => prev.map(i => i.productId === productId ? { ...i, ...updates } : i));
+  };
+
+  const clearSelectedFromCart = () => {
+    setCart(prev => prev.filter(i => !i.selected));
+  };
+
   return (
     <StoreContext.Provider value={{
-      products, orders, users, currentUser, authLoading, deliveryFee,
+      products, orders, users, currentUser, authLoading, deliveryFee, cart,
       setGlobalDeliveryFee, addOrder, updateOrderStatus, deleteOrder,
       addProduct, updateProduct, deleteProduct,
       signup, login, logout, updateUserRole, updateProfile,
+      addToCart, removeFromCart, updateCartItem, clearSelectedFromCart
     }}>
       {children}
     </StoreContext.Provider>

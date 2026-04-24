@@ -54,8 +54,8 @@ export const ManageOrders: React.FC<{ onBack: () => void }> = ({ onBack }) => {
           <option value="all_active">All Active</option>
           <option value="pending">Pending</option>
           <option value="processing">Processing</option>
-          <option value="out-for-delivery">Out for Delivery</option>
-          <option value="delivered">Delivered</option>
+          <option value="out-for-delivery">Out for Delivery / Ready for Pickup</option>
+          <option value="delivered">Delivered / Picked Up</option>
           <option value="cancelled">Cancelled</option>
         </select>
 
@@ -108,7 +108,7 @@ export const ManageOrders: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                 <p style={{ fontSize: '0.85rem', color: '#4B5563', fontWeight: 500 }}>{order.address}</p>
               </div>
 
-              {showMapOrderId === order.id && order.location && (
+              {showMapOrderId === order.id && order.location && order.orderType !== 'pickup' && (
                 <div className="animate-slide-up" style={{ height: '220px', width: '100%', marginBottom: '1.25rem', borderRadius: '18px', overflow: 'hidden', border: '1px solid #E5E7EB' }}>
                   <MapContainer center={[order.location.lat, order.location.lng]} zoom={15} style={{ height: '100%', width: '100%' }} zoomControl={false}>
                     <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
@@ -139,7 +139,14 @@ export const ManageOrders: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                   onClick={(e) => e.stopPropagation()}
                   onChange={(e) => { e.stopPropagation(); updateOrderStatus(order.id, e.target.value as OrderStatus); }}
                 >
-                  {statuses.map(s => <option key={s} value={s}>{s.replace('-', ' ').toUpperCase()}</option>)}
+                  {statuses.map(s => {
+                    let label = s.replace('-', ' ').toUpperCase();
+                    if (order.orderType === 'pickup') {
+                      if (s === 'out-for-delivery') label = 'READY FOR PICKUP';
+                      if (s === 'delivered') label = 'PICKED UP';
+                    }
+                    return <option key={s} value={s}>{label}</option>;
+                  })}
                 </select>
               </div>
 

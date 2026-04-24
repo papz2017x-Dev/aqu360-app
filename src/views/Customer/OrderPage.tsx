@@ -224,7 +224,7 @@ export const OrderPage: React.FC = () => {
                 onClick={() => setOrderType('delivery')}
                 style={{
                   flex: 1,
-                  padding: '1.25rem',
+                  padding: '0.75rem',
                   borderRadius: '16px',
                   border: orderType === 'delivery' ? '2px solid var(--color-primary)' : '1px solid var(--color-border)',
                   background: orderType === 'delivery' ? 'var(--color-primary-light)' : 'white',
@@ -235,7 +235,7 @@ export const OrderPage: React.FC = () => {
                   transition: 'all 0.2s ease'
                 }}
               >
-                <div style={{ width: '20px', height: '20px', borderRadius: '50%', border: '2px solid var(--color-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <div style={{ width: '18px', height: '18px', flexShrink: 0, borderRadius: '50%', border: orderType === 'delivery' ? '2px solid var(--color-primary)' : '2px solid var(--color-border)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   {orderType === 'delivery' && <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: 'var(--color-primary)' }}></div>}
                 </div>
                 <div>
@@ -250,7 +250,7 @@ export const OrderPage: React.FC = () => {
                 onClick={() => setOrderType('pickup')}
                 style={{
                   flex: 1,
-                  padding: '1.25rem',
+                  padding: '0.75rem',
                   borderRadius: '16px',
                   border: orderType === 'pickup' ? '2px solid var(--color-primary)' : '1px solid var(--color-border)',
                   background: orderType === 'pickup' ? 'var(--color-primary-light)' : 'white',
@@ -261,7 +261,7 @@ export const OrderPage: React.FC = () => {
                   transition: 'all 0.2s ease'
                 }}
               >
-                <div style={{ width: '20px', height: '20px', borderRadius: '50%', border: '2px solid var(--color-border)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <div style={{ width: '18px', height: '18px', flexShrink: 0, borderRadius: '50%', border: orderType === 'pickup' ? '2px solid var(--color-primary)' : '2px solid var(--color-border)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   {orderType === 'pickup' && <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: 'var(--color-primary)' }}></div>}
                 </div>
                 <div>
@@ -374,6 +374,7 @@ export const OrderPage: React.FC = () => {
                 <option value="cod">Cash on Delivery (COD)</option>
                 <option value="gcash">GCash</option>
                 <option value="arrangement">Arrangement</option>
+
               </select>
               <div style={{ position: 'absolute', right: '1.25rem', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', borderLeft: '5px solid transparent', borderRight: '5px solid transparent', borderTop: '5px solid #9CA3AF' }}></div>
             </div>

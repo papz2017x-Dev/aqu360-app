@@ -141,12 +141,29 @@ export const MyOrders: React.FC = () => {
     };
   }, [isDragging]);
 
-  const stages: Order['status'][] = ['pending', 'processing', 'out-for-delivery', 'delivered'];
 
-  const StatusStepper = ({ currentStatus }: { currentStatus: Order['status'] }) => {
+
+  const StatusStepper = ({ currentStatus, orderType }: { currentStatus: Order['status'], orderType: Order['orderType'] }) => {
     if (currentStatus === 'cancelled') return null;
     
+    const stages: Order['status'][] = ['pending', 'processing', 'out-for-delivery', 'delivered'];
     const currentIndex = stages.indexOf(currentStatus);
+
+    const getStageLabel = (status: Order['status']) => {
+      if (orderType === 'pickup') {
+        if (status === 'out-for-delivery') return 'Ready for Pickup';
+        if (status === 'delivered') return 'Picked Up';
+      }
+      return status.replace('-', ' ');
+    };
+
+    const getStageIcon = (status: Order['status']) => {
+      if (orderType === 'pickup') {
+        if (status === 'out-for-delivery') return <Store size={14} />;
+        if (status === 'delivered') return <CheckCircle size={14} />;
+      }
+      return getStatusIcon(status);
+    };
     
     return (
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem', padding: '0 0.5rem', position: 'relative' }}>
@@ -176,14 +193,14 @@ export const MyOrders: React.FC = () => {
                 transition: 'all 0.3s ease',
                 boxShadow: isCurrent ? '0 0 0 4px rgba(37, 169, 226, 0.2)' : 'none'
               }}>
-                {getStatusIcon(status)}
+                {getStageIcon(status)}
               </div>
               <span style={{ 
                 fontSize: '0.6rem', marginTop: '0.5rem', fontWeight: isActive ? 800 : 500, 
                 color: isActive ? 'var(--color-text)' : '#9CA3AF',
                 textAlign: 'center', maxWidth: '60px', textTransform: 'capitalize'
               }}>
-                {status.replace('-', ' ')}
+                {getStageLabel(status)}
               </span>
             </div>
           );
@@ -349,7 +366,7 @@ export const MyOrders: React.FC = () => {
                   </div>
 
                   {/* Stepper for non-cancelled orders */}
-                  <StatusStepper currentStatus={order.status} />
+                  <StatusStepper currentStatus={order.status} orderType={order.orderType} />
 
                   {/* Body: Items List */}
                   <div className="mb-4">
@@ -368,7 +385,7 @@ export const MyOrders: React.FC = () => {
                   </div>
 
                   {/* Map View */}
-                  {showMapId === order.id && order.location && (
+                  {showMapId === order.id && order.location && order.orderType !== 'pickup' && (
                     <div className="animate-slide-up" style={{ height: '200px', width: '100%', marginBottom: '1.5rem', borderRadius: '12px', overflow: 'hidden', border: '1px solid #E5E7EB' }}>
                       <MapContainer 
                         center={[order.location.lat, order.location.lng]} 

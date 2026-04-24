@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useStore } from '../../store/Store';
-import type { OrderType, CartItem } from '../../store/Store';
+import type { OrderType, CartItem, PaymentMethod } from '../../store/Store';
 import { MapPin, CheckCircle, Droplets, Minus, Plus, Truck, Store, Navigation, Banknote, Trash2, ShoppingBag } from 'lucide-react';
 import { MapContainer, TileLayer, Marker, useMap, useMapEvents } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -19,7 +19,8 @@ export const OrderPage: React.FC = () => {
   const { products, addOrder, currentUser, deliveryFee: globalDeliveryFee, cart, updateCartItem, removeFromCart, clearSelectedFromCart } = useStore();
   const navigate = useNavigate();
 
-  const [orderType, setOrderType] = useState<OrderType>('delivery');
+  const [orderType, setOrderType] = useState<OrderType>('pickup');
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('cod');
   const [customerName] = useState(currentUser?.name || '');
   const [contactNumber, setContactNumber] = useState(currentUser?.phone || '');
   const [address, setAddress] = useState(currentUser?.address || '');
@@ -93,6 +94,7 @@ export const OrderPage: React.FC = () => {
           price: products.find(p => p.id === item.productId)?.price || 0
         })),
         totalAmount,
+        paymentMethod,
         location: userCoords || { lat: 14.5995, lng: 120.9842 }
       });
       clearSelectedFromCart();
@@ -155,12 +157,12 @@ export const OrderPage: React.FC = () => {
               if (!product) return null;
 
               return (
-                <div key={item.productId} className="product-card" style={{ padding: '1.25rem', flexDirection: 'row', alignItems: 'center', gap: '1rem', border: item.selected ? '1px solid var(--color-primary)' : '1px solid #F3F4F6', opacity: item.selected ? 1 : 0.7 }}>
+                <div key={item.productId} className="product-card" style={{ padding: '1rem', flexDirection: 'row', alignItems: 'center', gap: '0.5rem', border: item.selected ? '1px solid var(--color-primary)' : '1px solid #F3F4F6', opacity: item.selected ? 1 : 0.7 }}>
                   {/* Checkbox */}
                   <div
                     onClick={() => updateCartItem(item.productId, { selected: !item.selected })}
                     style={{
-                      width: '24px', height: '24px', borderRadius: '6px',
+                      width: '16px', height: '16px', borderRadius: '6px',
                       border: `2px solid ${item.selected ? 'var(--color-primary)' : '#D1D5DB'}`,
                       background: item.selected ? 'var(--color-primary)' : 'transparent',
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -181,8 +183,14 @@ export const OrderPage: React.FC = () => {
 
                   {/* Info */}
                   <div className="flex-1 min-w-0">
-                    <h3 style={{ fontSize: '1rem', fontWeight: 700, margin: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{product.name}</h3>
-                    <p className="text-muted text-xs mb-1">₱{product.price.toFixed(2)} each</p>
+                    <h3 style={{ fontSize: '0.875rem', fontWeight: 600, margin: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{product.name}</h3>
+                    <p
+                      className="text-muted mb-1"
+                      style={{ fontSize: "0.8rem" }}
+                    >
+                      ₱{product.price.toFixed(2)} each
+                    </p>
+
                     <div className="flex items-center gap-2">
                       <div className="flex items-center gap-2 bg-gray-50 rounded-lg p-1 border border-gray-100">
                         <button type="button" onClick={() => updateCartItem(item.productId, { quantity: Math.max(1, item.quantity - 1) })} style={{ width: '24px', height: '24px', borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'white', border: '1px solid #E5E7EB' }}>
@@ -193,14 +201,14 @@ export const OrderPage: React.FC = () => {
                           <Plus size={12} />
                         </button>
                       </div>
-                      <button type="button" onClick={() => removeFromCart(item.productId)} style={{ color: '#EF4444', padding: '0.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        <Trash2 size={18} />
+                      <button type="button" onClick={() => removeFromCart(item.productId)} style={{ color: '#EF4444', padding: '0.3rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <Trash2 size={14} />
                       </button>
                     </div>
                   </div>
 
                   {/* Item Total */}
-                  <div style={{ textAlign: 'right', fontWeight: 800, color: item.selected ? 'var(--color-primary)' : '#9CA3AF' }}>
+                  <div style={{ textAlign: 'right', fontWeight: 700, color: item.selected ? 'var(--color-primary)' : '#9CA3AF' }}>
                     ₱{(product.price * item.quantity).toFixed(2)}
                   </div>
                 </div>
@@ -352,6 +360,81 @@ export const OrderPage: React.FC = () => {
             </div>
           </div>
 
+          {/* Payment Options */}
+          <div>
+            <h3 className="text-sm font-bold uppercase tracking-wider text-muted mb-4">Payment Options</h3>
+            <div className="flex gap-3">
+              <div
+                onClick={() => setPaymentMethod('cod')}
+                style={{
+                  flex: 1,
+                  padding: '1.25rem',
+                  borderRadius: '16px',
+                  border: paymentMethod === 'cod' ? '2px solid var(--color-primary)' : '1px solid var(--color-border)',
+                  background: paymentMethod === 'cod' ? 'var(--color-primary-light)' : 'white',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.75rem',
+                  transition: 'all 0.2s ease'
+                }}
+              >
+                <div style={{ width: '20px', height: '20px', borderRadius: '50%', border: paymentMethod === 'cod' ? '2px solid var(--color-primary)' : '2px solid var(--color-border)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  {paymentMethod === 'cod' && <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: 'var(--color-primary)' }}></div>}
+                </div>
+                <div className="flex items-center gap-2 font-bold text-sm">
+                  <Banknote size={20} className="text-primary" /> COD
+                </div>
+              </div>
+
+              <div
+                onClick={() => setPaymentMethod('gcash')}
+                style={{
+                  flex: 1,
+                  padding: '1.25rem',
+                  borderRadius: '16px',
+                  border: paymentMethod === 'gcash' ? '2px solid var(--color-primary)' : '1px solid var(--color-border)',
+                  background: paymentMethod === 'gcash' ? 'var(--color-primary-light)' : 'white',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.75rem',
+                  transition: 'all 0.2s ease'
+                }}
+              >
+                <div style={{ width: '20px', height: '20px', borderRadius: '50%', border: paymentMethod === 'gcash' ? '2px solid var(--color-primary)' : '2px solid var(--color-border)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  {paymentMethod === 'gcash' && <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: 'var(--color-primary)' }}></div>}
+                </div>
+                <div className="flex items-center gap-2 font-bold text-sm">
+                  GCash
+                </div>
+              </div>
+
+              <div
+                onClick={() => setPaymentMethod('arrangement')}
+                style={{
+                  flex: 1,
+                  padding: '1.25rem',
+                  borderRadius: '16px',
+                  border: paymentMethod === 'arrangement' ? '2px solid var(--color-primary)' : '1px solid var(--color-border)',
+                  background: paymentMethod === 'arrangement' ? 'var(--color-primary-light)' : 'white',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.75rem',
+                  transition: 'all 0.2s ease'
+                }}
+              >
+                <div style={{ width: '20px', height: '20px', borderRadius: '50%', border: paymentMethod === 'arrangement' ? '2px solid var(--color-primary)' : '2px solid var(--color-border)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  {paymentMethod === 'arrangement' && <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: 'var(--color-primary)' }}></div>}
+                </div>
+                <div className="flex items-center gap-2 font-bold text-sm">
+                  Arrangement
+                </div>
+              </div>
+            </div>
+          </div>
+
           {/* Order Summary */}
           <div className="product-card" style={{ background: 'white', display: 'flex', flexDirection: 'column', border: '2px solid #F3F4F6' }}>
             <div style={{ padding: '1.5rem 1.5rem 0' }}>
@@ -374,7 +457,9 @@ export const OrderPage: React.FC = () => {
               </div>
               <div style={{ background: 'var(--color-bg)', padding: '0.75rem', borderRadius: '10px', fontSize: '0.75rem', color: 'var(--color-text-muted)', display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1.5rem' }}>
                 <Banknote size={16} className="text-success" />
-                <span>Cash on Delivery only</span>
+                <span>
+                  {paymentMethod === 'cod' ? 'Cash on Delivery' : paymentMethod === 'gcash' ? 'GCash' : 'Arrangement'}
+                </span>
               </div>
             </div>
 

@@ -27,6 +27,7 @@ export interface OrderItem {
 
 export type OrderStatus = 'pending' | 'processing' | 'out-for-delivery' | 'delivered' | 'cancelled';
 export type OrderType = 'delivery' | 'pickup';
+export type PaymentMethod = 'cod' | 'gcash' | 'arrangement';
 
 export interface Order {
   id: string;
@@ -41,6 +42,7 @@ export interface Order {
   items: OrderItem[];
   totalAmount: number;
   status: OrderStatus;
+  paymentMethod?: PaymentMethod;
   createdAt: string;
 }
 

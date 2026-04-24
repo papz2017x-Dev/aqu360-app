@@ -272,7 +272,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       // Play notification sound
       try {
         const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2358/2358-preview.mp3'); // Short notification chime
-        audio.play().catch(e => {
+        audio.play().catch(() => {
           // Many browsers block audio until the user interacts with the page (click/touch)
           console.log('Audio playback prevented by browser policy. Interaction needed first.');
         });

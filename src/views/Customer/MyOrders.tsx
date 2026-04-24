@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useStore } from '../../store/Store';
 import type { Order, OrderItem } from '../../store/Store';
-import { Clock, CheckCircle, Package, Truck, XCircle, Store, Trash2, ChevronLeft, RefreshCw, Ban, MapPin } from 'lucide-react';
+import { Clock, CheckCircle, Package, Truck, XCircle, Store, Trash2, RefreshCw, MapPin } from 'lucide-react';
 import { MapContainer, TileLayer, Marker } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
@@ -44,15 +44,7 @@ export const MyOrders: React.FC = () => {
     }
   };
 
-  const getStatusColor = (status: Order['status']) => {
-    switch (status) {
-      case 'pending': return '#F59E0B'; // Amber
-      case 'processing': return '#3B82F6'; // Blue
-      case 'out-for-delivery': return '#25A9E2'; // Primary
-      case 'delivered': return '#10B981'; // Green
-      case 'cancelled': return '#EF4444'; // Red
-    }
-  };
+
 
   const handleCancelOrder = (orderId: string) => {
     setCancelOrderId(orderId);

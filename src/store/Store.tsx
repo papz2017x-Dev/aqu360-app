@@ -44,6 +44,10 @@ export interface Order {
   status: OrderStatus;
   paymentMethod?: PaymentMethod;
   createdAt: string;
+  cancellation?: {
+    reason: string;
+    requestedAt: string;
+  };
 }
 
 export type UserRole = 'user' | 'admin' | 'superuser';
@@ -79,6 +83,8 @@ interface AppState {
   addOrder: (order: Omit<Order, 'id' | 'createdAt' | 'status'>) => Promise<void>;
   updateOrderStatus: (orderId: string, status: OrderStatus) => Promise<void>;
   deleteOrder: (orderId: string) => Promise<void>;
+  requestCancellation: (orderId: string, reason: string) => Promise<void>;
+  resolveCancellation: (orderId: string, approved: boolean) => Promise<void>;
   addProduct: (product: Omit<Product, 'id'>) => Promise<void>;
   updateProduct: (product: Product) => Promise<void>;
   deleteProduct: (productId: string) => Promise<void>;
@@ -234,6 +240,28 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     await deleteDoc(doc(db, 'orders', orderId));
   };
 
+  const requestCancellation = async (orderId: string, reason: string) => {
+    await updateDoc(doc(db, 'orders', orderId), {
+      cancellation: {
+        reason,
+        requestedAt: new Date().toISOString()
+      }
+    });
+  };
+
+  const resolveCancellation = async (orderId: string, approved: boolean) => {
+    if (approved) {
+      await updateDoc(doc(db, 'orders', orderId), {
+        status: 'cancelled',
+        cancellation: null
+      });
+    } else {
+      await updateDoc(doc(db, 'orders', orderId), {
+        cancellation: null
+      });
+    }
+  };
+
   // Product methods
   const addProduct = async (productData: Omit<Product, 'id'>) => {
     await addDoc(collection(db, 'products'), productData);
@@ -279,6 +307,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     <StoreContext.Provider value={{
       products, orders, users, currentUser, authLoading, deliveryFee, cart,
       setGlobalDeliveryFee, addOrder, updateOrderStatus, deleteOrder,
+      requestCancellation, resolveCancellation,
       addProduct, updateProduct, deleteProduct,
       signup, login, logout, updateUserRole, updateProfile, deleteAccount,
       addToCart, removeFromCart, updateCartItem, clearSelectedFromCart

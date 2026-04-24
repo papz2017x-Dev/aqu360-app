@@ -240,7 +240,7 @@ export const OrderPage: React.FC = () => {
                 </div>
                 <div>
                   <div className="flex items-center gap-2 font-bold text-sm">
-                    <Truck size={20} className="text-primary" /> Delivery + ₱{deliveryFee.toFixed(2)}
+                    <Truck size={20} className="text-primary" /> Delivery + Fee
                   </div>
 
                 </div>
@@ -362,76 +362,20 @@ export const OrderPage: React.FC = () => {
 
           {/* Payment Options */}
           <div>
-            <h3 className="text-sm font-bold uppercase tracking-wider text-muted mb-4">Payment Options</h3>
-            <div className="flex gap-3">
-              <div
-                onClick={() => setPaymentMethod('cod')}
-                style={{
-                  flex: 1,
-                  padding: '1.25rem',
-                  borderRadius: '16px',
-                  border: paymentMethod === 'cod' ? '2px solid var(--color-primary)' : '1px solid var(--color-border)',
-                  background: paymentMethod === 'cod' ? 'var(--color-primary-light)' : 'white',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.75rem',
-                  transition: 'all 0.2s ease'
-                }}
+            <label className="text-xs font-bold text-muted mb-1 block">Payment Options</label>
+            <div style={{ position: 'relative' }}>
+              <Banknote size={18} className="text-muted" style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)' }} />
+              <select
+                className="input"
+                style={{ paddingLeft: '3rem', cursor: 'pointer', appearance: 'none' }}
+                value={paymentMethod}
+                onChange={(e) => setPaymentMethod(e.target.value as PaymentMethod)}
               >
-                <div style={{ width: '20px', height: '20px', borderRadius: '50%', border: paymentMethod === 'cod' ? '2px solid var(--color-primary)' : '2px solid var(--color-border)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  {paymentMethod === 'cod' && <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: 'var(--color-primary)' }}></div>}
-                </div>
-                <div className="flex items-center gap-2 font-bold text-sm">
-                  <Banknote size={20} className="text-primary" /> COD
-                </div>
-              </div>
-
-              <div
-                onClick={() => setPaymentMethod('gcash')}
-                style={{
-                  flex: 1,
-                  padding: '1.25rem',
-                  borderRadius: '16px',
-                  border: paymentMethod === 'gcash' ? '2px solid var(--color-primary)' : '1px solid var(--color-border)',
-                  background: paymentMethod === 'gcash' ? 'var(--color-primary-light)' : 'white',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.75rem',
-                  transition: 'all 0.2s ease'
-                }}
-              >
-                <div style={{ width: '20px', height: '20px', borderRadius: '50%', border: paymentMethod === 'gcash' ? '2px solid var(--color-primary)' : '2px solid var(--color-border)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  {paymentMethod === 'gcash' && <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: 'var(--color-primary)' }}></div>}
-                </div>
-                <div className="flex items-center gap-2 font-bold text-sm">
-                  GCash
-                </div>
-              </div>
-
-              <div
-                onClick={() => setPaymentMethod('arrangement')}
-                style={{
-                  flex: 1,
-                  padding: '1.25rem',
-                  borderRadius: '16px',
-                  border: paymentMethod === 'arrangement' ? '2px solid var(--color-primary)' : '1px solid var(--color-border)',
-                  background: paymentMethod === 'arrangement' ? 'var(--color-primary-light)' : 'white',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.75rem',
-                  transition: 'all 0.2s ease'
-                }}
-              >
-                <div style={{ width: '20px', height: '20px', borderRadius: '50%', border: paymentMethod === 'arrangement' ? '2px solid var(--color-primary)' : '2px solid var(--color-border)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  {paymentMethod === 'arrangement' && <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: 'var(--color-primary)' }}></div>}
-                </div>
-                <div className="flex items-center gap-2 font-bold text-sm">
-                  Arrangement
-                </div>
-              </div>
+                <option value="cod">Cash on Delivery (COD)</option>
+                <option value="gcash">GCash</option>
+                <option value="arrangement">Arrangement</option>
+              </select>
+              <div style={{ position: 'absolute', right: '1.25rem', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', borderLeft: '5px solid transparent', borderRight: '5px solid transparent', borderTop: '5px solid #9CA3AF' }}></div>
             </div>
           </div>
 

@@ -21,12 +21,18 @@ const getStatusMarker = (status: OrderStatus) => {
 };
 
 export const ManageOrders: React.FC<{ onBack: () => void }> = ({ onBack }) => {
-  const { orders, updateOrderStatus, products } = useStore();
+  const { orders, updateOrderStatus, products, resolveCancellation } = useStore();
   const [viewMode, setViewMode] = useState<'list' | 'map'>('list');
   const [showMapOrderId, setShowMapOrderId] = useState<string | null>(null);
+  const [statusFilter, setStatusFilter] = useState<OrderStatus | 'all_active'>('all_active');
 
   const pendingCount = orders.filter(o => o.status === 'pending').length;
   const statuses: OrderStatus[] = ['pending', 'processing', 'out-for-delivery', 'delivered', 'cancelled'];
+
+  const filteredOrders = orders.filter(order => {
+    if (statusFilter === 'all_active') return order.status !== 'cancelled';
+    return order.status === statusFilter;
+  });
 
   return (
     <div className="animate-slide-up pb-20">
@@ -39,6 +45,20 @@ export const ManageOrders: React.FC<{ onBack: () => void }> = ({ onBack }) => {
       </div>
 
       <div className="flex justify-between items-center mb-6">
+        <select 
+          className="input" 
+          style={{ width: 'auto', padding: '0.5rem 1rem', height: 'auto', fontSize: '0.8rem', fontWeight: 800, borderRadius: '12px', background: '#F3F4F6', border: 'none', cursor: 'pointer' }}
+          value={statusFilter}
+          onChange={(e) => setStatusFilter(e.target.value as any)}
+        >
+          <option value="all_active">All Active</option>
+          <option value="pending">Pending</option>
+          <option value="processing">Processing</option>
+          <option value="out-for-delivery">Out for Delivery</option>
+          <option value="delivered">Delivered</option>
+          <option value="cancelled">Cancelled</option>
+        </select>
+
         <div className="flex gap-1 bg-gray-100 p-1 rounded-xl">
           <button onClick={() => setViewMode('list')} className={`p-2 rounded-lg ${viewMode === 'list' ? 'bg-white shadow-sm text-primary' : 'text-gray-400'}`}><List size={20} /></button>
           <button onClick={() => setViewMode('map')} className={`p-2 rounded-lg ${viewMode === 'map' ? 'bg-white shadow-sm text-primary' : 'text-gray-400'}`}><MapIcon size={20} /></button>
@@ -47,7 +67,10 @@ export const ManageOrders: React.FC<{ onBack: () => void }> = ({ onBack }) => {
 
       {viewMode === 'list' ? (
         <div className="flex flex-col gap-4">
-          {orders.map((order: Order) => (
+          {filteredOrders.length === 0 ? (
+            <div className="text-center py-8 text-muted">No orders found for the selected filter.</div>
+          ) : (
+            filteredOrders.map((order: Order) => (
             <div 
               key={order.id} 
               className="product-card" 
@@ -119,14 +142,40 @@ export const ManageOrders: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                   {statuses.map(s => <option key={s} value={s}>{s.replace('-', ' ').toUpperCase()}</option>)}
                 </select>
               </div>
+
+              {order.cancellation && (
+                <div style={{ marginTop: '1rem', padding: '1rem', background: '#FEF2F2', border: '1px solid #FCA5A5', borderRadius: '16px' }} onClick={e => e.stopPropagation()}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem' }}>
+                    <span style={{ background: '#EF4444', color: 'white', padding: '0.25rem 0.5rem', borderRadius: '8px', fontSize: '0.7rem', fontWeight: 900, textTransform: 'uppercase' }}>Cancellation Requested</span>
+                    <span style={{ fontSize: '0.85rem', fontWeight: 600, color: '#7F1D1D' }}>{order.cancellation.reason}</span>
+                  </div>
+                  <div className="flex gap-2">
+                    <button 
+                      className="btn" 
+                      style={{ flex: 1, padding: '0.6rem', fontSize: '0.8rem', background: 'white', color: '#EF4444', border: '1px solid #FCA5A5' }}
+                      onClick={() => resolveCancellation(order.id, true)}
+                    >
+                      Approve
+                    </button>
+                    <button 
+                      className="btn" 
+                      style={{ flex: 1, padding: '0.6rem', fontSize: '0.8rem', background: '#FCA5A5', color: '#7F1D1D' }}
+                      onClick={() => resolveCancellation(order.id, false)}
+                    >
+                      Reject
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
-          ))}
+          ))
+          )}
         </div>
       ) : (
         <div className="product-card" style={{ padding: 0, overflow: 'hidden', height: '500px', borderRadius: '32px' }}>
           <MapContainer center={[14.5995, 120.9842]} zoom={13} style={{ height: '100%', width: '100%' }}>
             <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-            {orders.map(order => order.location && (
+            {filteredOrders.map(order => order.location && (
               <Marker key={order.id} position={[order.location.lat, order.location.lng]} icon={getStatusMarker(order.status)}>
                 <Popup>
                   <strong>{order.customerName}</strong>

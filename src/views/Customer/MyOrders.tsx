@@ -16,10 +16,21 @@ L.Icon.Default.mergeOptions({
 });
 
 export const MyOrders: React.FC = () => {
-  const { orders, currentUser, products, updateOrderStatus, deleteOrder } = useStore();
+  const { orders, currentUser, products, deleteOrder, requestCancellation } = useStore();
   const navigate = useNavigate();
   const [swipedOrderId, setSwipedOrderId] = useState<string | null>(null);
   const [showMapId, setShowMapId] = useState<string | null>(null);
+
+  const [cancelOrderId, setCancelOrderId] = useState<string | null>(null);
+  const [cancelReason, setCancelReason] = useState<string>('');
+  const [isSubmittingCancel, setIsSubmittingCancel] = useState(false);
+
+  const cancellationReasons = [
+    "Change of mind",
+    "Incorrect quantity of order",
+    "Delivery took too long",
+    "Processing took too long"
+  ];
 
   // Interaction State
   const [dragStart, setDragStart] = useState<number | null>(null);
@@ -75,9 +86,22 @@ export const MyOrders: React.FC = () => {
   };
 
   const handleCancelOrder = (orderId: string) => {
-    if (window.confirm('Are you sure you want to cancel this order?')) {
-      updateOrderStatus(orderId, 'cancelled');
-      setSwipedOrderId(null);
+    setCancelOrderId(orderId);
+    setSwipedOrderId(null);
+  };
+
+  const submitCancellation = async () => {
+    if (!cancelOrderId || !cancelReason) return;
+    setIsSubmittingCancel(true);
+    try {
+      await requestCancellation(cancelOrderId, cancelReason);
+      setCancelOrderId(null);
+      setCancelReason('');
+    } catch (e) {
+      console.error(e);
+      alert('Failed to submit cancellation request.');
+    } finally {
+      setIsSubmittingCancel(false);
     }
   };
 
@@ -170,6 +194,31 @@ export const MyOrders: React.FC = () => {
 
   return (
     <div className="animate-slide-up" style={{ userSelect: 'none' }}>
+      {cancelOrderId && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1.25rem' }}>
+          <div className="animate-slide-up" style={{ background: 'white', borderRadius: '24px', padding: '1.5rem', width: '100%', maxWidth: '400px' }}>
+            <h3 style={{ fontSize: '1.25rem', fontWeight: 800, marginBottom: '1rem', color: '#111827' }}>Cancel Order</h3>
+            <p className="text-muted text-sm mb-4">Please select a reason for cancellation. An admin will review your request.</p>
+            
+            <div className="flex flex-col gap-3 mb-6">
+              {cancellationReasons.map((reason, idx) => (
+                <label key={idx} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', cursor: 'pointer', padding: '0.75rem', border: cancelReason === reason ? '2px solid var(--color-primary)' : '1px solid #E5E7EB', borderRadius: '12px', background: cancelReason === reason ? 'var(--color-primary-light)' : 'white' }}>
+                  <input type="radio" name="cancelReason" value={reason} checked={cancelReason === reason} onChange={(e) => setCancelReason(e.target.value)} style={{ width: '18px', height: '18px', accentColor: 'var(--color-primary)' }} />
+                  <span style={{ fontSize: '0.875rem', fontWeight: 600 }}>{reason}</span>
+                </label>
+              ))}
+            </div>
+
+            <div className="flex gap-3">
+              <button className="btn" style={{ flex: 1, background: '#F3F4F6', color: '#4B5563', padding: '0.875rem', borderRadius: '12px', fontWeight: 700 }} onClick={() => { setCancelOrderId(null); setCancelReason(''); }}>Back</button>
+              <button className="btn btn-primary" style={{ flex: 1, padding: '0.875rem', opacity: (!cancelReason || isSubmittingCancel) ? 0.6 : 1, borderRadius: '12px', fontWeight: 700 }} disabled={!cancelReason || isSubmittingCancel} onClick={submitCancellation}>
+                {isSubmittingCancel ? 'Submitting...' : 'Submit Request'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="p-6 bg-white">
         <h2 style={{ fontSize: '1.75rem', fontWeight: 800, margin: 15, color: '#111827' }}>My Orders</h2>
       </div>
@@ -352,6 +401,22 @@ export const MyOrders: React.FC = () => {
                       ₱{order.totalAmount.toFixed(2)}
                     </div>
                   </div>
+
+                  {order.cancellation ? (
+                    <div style={{ marginTop: '1rem', background: '#FEF3C7', color: '#D97706', padding: '0.75rem', borderRadius: '12px', fontWeight: 700, textAlign: 'center', fontSize: '0.875rem' }}>
+                      Cancellation Requested: {order.cancellation.reason}
+                    </div>
+                  ) : (
+                    (order.status === 'pending' || order.status === 'processing') && (
+                      <button 
+                        className="btn w-full"
+                        style={{ marginTop: '1rem', background: '#FEE2E2', color: '#EF4444', padding: '0.75rem', borderRadius: '12px', fontWeight: 700 }}
+                        onClick={(e) => { e.stopPropagation(); handleCancelOrder(order.id); }}
+                      >
+                        Cancel Order
+                      </button>
+                    )
+                  )}
                 </div>
               </div>
             ))}

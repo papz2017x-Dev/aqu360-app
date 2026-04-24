@@ -2,6 +2,8 @@ import { initializeApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 
+import { getMessaging } from 'firebase/messaging';
+
 const firebaseConfig = {
   apiKey: "AIzaSyBj651Qmyz6Xtou6CPG9uKc0qn0YjimcSY",
   authDomain: "aqua360-c6f6e.firebaseapp.com",
@@ -15,3 +17,4 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 export const db = getFirestore(app);
+export const messaging = getMessaging(app);

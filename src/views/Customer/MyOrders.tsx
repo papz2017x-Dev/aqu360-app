@@ -18,7 +18,6 @@ L.Icon.Default.mergeOptions({
 export const MyOrders: React.FC = () => {
   const { orders, currentUser, products, deleteOrder, requestCancellation } = useStore();
   const navigate = useNavigate();
-  const [swipedOrderId, setSwipedOrderId] = useState<string | null>(null);
   const [showMapId, setShowMapId] = useState<string | null>(null);
 
   const [cancelOrderId, setCancelOrderId] = useState<string | null>(null);
@@ -32,38 +31,8 @@ export const MyOrders: React.FC = () => {
     "Processing took too long"
   ];
 
-  // Interaction State
-  const [dragStart, setDragStart] = useState<number | null>(null);
-  const [isDragging, setIsDragging] = useState(false);
-
   // Filter orders for the current user
   const myOrders = orders.filter(o => o.userId === currentUser?.id);
-
-  // Universal Drag Handlers (Touch + Mouse)
-  const onStart = (clientX: number) => {
-    setDragStart(clientX);
-    setIsDragging(true);
-  };
-
-  const onMove = (clientX: number, orderId: string, status: string) => {
-    if (!isDragging || !dragStart) return;
-    // Allow swipe for pending (cancel) and cancelled (reorder/delete)
-    if (status !== 'pending' && status !== 'cancelled') return;
-
-    const diff = dragStart - clientX;
-
-    // Threshold to reveal
-    if (diff > 50) {
-      setSwipedOrderId(orderId);
-    } else if (diff < -50) {
-      setSwipedOrderId(null);
-    }
-  };
-
-  const onEnd = () => {
-    setIsDragging(false);
-    setDragStart(null);
-  };
 
   const getStatusIcon = (status: Order['status']) => {
     switch (status) {
@@ -87,7 +56,6 @@ export const MyOrders: React.FC = () => {
 
   const handleCancelOrder = (orderId: string) => {
     setCancelOrderId(orderId);
-    setSwipedOrderId(null);
   };
 
   const submitCancellation = async () => {
@@ -108,7 +76,6 @@ export const MyOrders: React.FC = () => {
   const handleDeleteOrder = (orderId: string) => {
     if (window.confirm('Permanently delete this order from history?')) {
       deleteOrder(orderId);
-      setSwipedOrderId(null);
     }
   };
 
@@ -125,23 +92,6 @@ export const MyOrders: React.FC = () => {
       ' • ' +
       date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
   };
-
-  // Close swipe on global click/touch
-  useEffect(() => {
-    const handleGlobalAction = () => {
-      if (!isDragging) {
-        // setSwipedOrderId(null); // Optional
-      }
-    };
-    window.addEventListener('mousedown', handleGlobalAction);
-    window.addEventListener('touchstart', handleGlobalAction);
-    return () => {
-      window.removeEventListener('mousedown', handleGlobalAction);
-      window.removeEventListener('touchstart', handleGlobalAction);
-    };
-  }, [isDragging]);
-
-
 
   const StatusStepper = ({ currentStatus, orderType }: { currentStatus: Order['status'], orderType: Order['orderType'] }) => {
     if (currentStatus === 'cancelled') return null;
@@ -210,7 +160,7 @@ export const MyOrders: React.FC = () => {
   };
 
   return (
-    <div className="animate-slide-up" style={{ userSelect: 'none' }}>
+    <div style={{ userSelect: 'none' }}>
       {cancelOrderId && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1.25rem' }}>
           <div className="animate-slide-up" style={{ background: 'white', borderRadius: '24px', padding: '1.5rem', width: '100%', maxWidth: '400px' }}>
@@ -236,9 +186,10 @@ export const MyOrders: React.FC = () => {
         </div>
       )}
 
-      <div className="p-6 bg-white">
-        <h2 style={{ fontSize: '1.75rem', fontWeight: 800, margin: 15, color: '#111827' }}>My Orders</h2>
-      </div>
+      <div className="animate-slide-up">
+        <div className="p-6 bg-white">
+          <h2 style={{ fontSize: '1.75rem', fontWeight: 800, margin: 15, color: '#111827' }}>My Orders</h2>
+        </div>
 
       <div style={{ padding: '0 1.25rem 2rem' }}>
         {myOrders.length === 0 ? (
@@ -265,60 +216,12 @@ export const MyOrders: React.FC = () => {
                   position: 'relative',
                   overflow: 'hidden',
                   borderRadius: '16px',
-                  background: order.status === 'pending' ? '#EF4444' : '#F3F4F6' // Background for actions
+                  background: '#F3F4F6'
                 }}
               >
-
-                {/* Actions Behind Card */}
-                {order.status === 'pending' ? (
-                  <div
-                    style={{
-                      position: 'absolute', top: 0, right: 0, bottom: 0, width: '100px',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      color: 'white', cursor: 'pointer', zIndex: 1, fontWeight: 800, fontSize: '0.8rem', flexDirection: 'column', gap: '4px'
-                    }}
-                    onClick={(e) => { e.stopPropagation(); handleCancelOrder(order.id); }}
-                  >
-                    <Ban size={20} />
-                    <span>Cancel</span>
-                  </div>
-                ) : order.status === 'cancelled' ? (
-                  <div style={{ position: 'absolute', top: 0, right: 0, bottom: 0, display: 'flex', zIndex: 1, width: '160px' }}>
-                    <div
-                      style={{
-                        flex: 1, background: 'var(--color-primary)', color: 'white',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: '4px',
-                        fontSize: '0.7rem', fontWeight: 800, cursor: 'pointer'
-                      }}
-                      onClick={(e) => { e.stopPropagation(); handleReorder(order); }}
-                    >
-                      <RefreshCw size={20} />
-                      <span>Reorder</span>
-                    </div>
-                    <div
-                      style={{
-                        flex: 1, background: '#EF4444', color: 'white',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: '4px',
-                        fontSize: '0.7rem', fontWeight: 800, cursor: 'pointer'
-                      }}
-                      onClick={(e) => { e.stopPropagation(); handleDeleteOrder(order.id); }}
-                    >
-                      <Trash2 size={20} />
-                      <span>Remove</span>
-                    </div>
-                  </div>
-                ) : null}
-
                 {/* Main Card Content */}
                 <div
                   className="product-card"
-                  onMouseDown={(e) => onStart(e.clientX)}
-                  onMouseMove={(e) => onMove(e.clientX, order.id, order.status)}
-                  onMouseUp={onEnd}
-                  onMouseLeave={onEnd}
-                  onTouchStart={(e) => onStart(e.targetTouches[0].clientX)}
-                  onTouchMove={(e) => onMove(e.targetTouches[0].clientX, order.id, order.status)}
-                  onTouchEnd={onEnd}
                   onClick={() => setShowMapId(showMapId === order.id ? null : order.id)}
                   style={{
                     padding: '1.5rem',
@@ -328,10 +231,7 @@ export const MyOrders: React.FC = () => {
                     borderRadius: '16px',
                     position: 'relative',
                     zIndex: 2,
-                    transform: swipedOrderId === order.id ? `translateX(-${order.status === 'cancelled' ? '160' : '100'}px)` : 'translateX(0)',
-                    transition: isDragging ? 'none' : 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                    cursor: (order.status === 'pending' || order.status === 'cancelled') ? 'grab' : 'pointer',
-                    touchAction: 'pan-y'
+                    cursor: 'pointer',
                   }}
                 >
                   {/* Header: Date and Status */}
@@ -340,7 +240,7 @@ export const MyOrders: React.FC = () => {
                       {formatDateTime(order.createdAt)}
                     </div>
                     <div className="flex items-center gap-2">
-                      {order.status === 'cancelled' ? (
+                      {order.status === 'cancelled' && (
                         <div
                           style={{
                             backgroundColor: '#FEE2E2',
@@ -356,10 +256,6 @@ export const MyOrders: React.FC = () => {
                         >
                           <XCircle size={14} />
                           <span>Cancelled</span>
-                        </div>
-                      ) : (
-                        <div style={{ fontSize: '0.75rem', fontWeight: 700, color: getStatusColor(order.status) }}>
-                          {swipedOrderId !== order.id && <ChevronLeft size={16} className="text-gray-300 animate-pulse inline" />}
                         </div>
                       )}
                     </div>
@@ -434,6 +330,24 @@ export const MyOrders: React.FC = () => {
                       </button>
                     )
                   )}
+                  {(order.status === 'cancelled' || order.status === 'delivered') && (
+                    <div className="flex gap-2" style={{ marginTop: '1rem' }}>
+                      <button 
+                        className="btn"
+                        style={{ flex: 1, background: 'var(--color-primary-light)', color: 'var(--color-primary)', padding: '0.75rem', borderRadius: '12px', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}
+                        onClick={(e) => { e.stopPropagation(); handleReorder(order); }}
+                      >
+                        <RefreshCw size={16} /> Reorder
+                      </button>
+                      <button 
+                        className="btn"
+                        style={{ flex: 1, background: '#FEE2E2', color: '#EF4444', padding: '0.75rem', borderRadius: '12px', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}
+                        onClick={(e) => { e.stopPropagation(); handleDeleteOrder(order.id); }}
+                      >
+                        <Trash2 size={16} /> Remove
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
             ))}
@@ -441,5 +355,6 @@ export const MyOrders: React.FC = () => {
         )}
       </div>
     </div>
+  </div>
   );
 };

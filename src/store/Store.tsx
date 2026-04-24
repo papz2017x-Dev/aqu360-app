@@ -9,7 +9,8 @@ import {
   collection, doc, setDoc, addDoc, updateDoc,
   deleteDoc, onSnapshot, query, orderBy, getDoc, getDocs,
 } from 'firebase/firestore';
-import { auth, db } from '../firebase';
+import { auth, db, messaging } from '../firebase';
+import { getToken, onMessage } from 'firebase/messaging';
 
 export interface Product {
   id: string;
@@ -180,6 +181,107 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     return unsub;
   }, []);
 
+  // Browser Notification System
+  useEffect(() => {
+    if ("Notification" in window && Notification.permission === "default") {
+      Notification.requestPermission();
+    }
+  }, []);
+
+  // FCM Token Registration
+  useEffect(() => {
+    const registerFCM = async () => {
+      if (currentUser && "Notification" in window) {
+        try {
+          // Note: You need to replace this with your actual VAPID key from Firebase Console
+          // Project Settings > Cloud Messaging > Web configuration > Web Push certificates
+          const VAPID_KEY = 'BBNbVLHkWte1rQD45yZMsxBB5wTByTOLHgT00kNgkdAOLUo0MyQKvBZIOEnyTjjGRHVCD6n5EoEt5sC661Z_Mgo'; // Placeholder
+
+          const token = await getToken(messaging, { vapidKey: VAPID_KEY });
+          if (token) {
+            await updateDoc(doc(db, 'users', currentUser.id), { fcmToken: token });
+            console.log('FCM Token registered');
+          }
+        } catch (error) {
+          console.error('FCM registration failed:', error);
+        }
+      }
+    };
+    registerFCM();
+  }, [currentUser]);
+
+  // Foreground Message Listener
+  useEffect(() => {
+    const unsub = onMessage(messaging, (payload) => {
+      if (payload.notification) {
+        triggerNotification(payload.notification.title || 'Notification', {
+          body: payload.notification.body,
+        });
+      }
+    });
+    return unsub;
+  }, []);
+
+  const [hasInitializedOrders, setHasInitializedOrders] = useState(false);
+  const [prevOrders, setPrevOrders] = useState<Order[]>([]);
+
+  useEffect(() => {
+    if (!hasInitializedOrders) {
+      if (orders.length > 0) {
+        setPrevOrders(orders);
+        setHasInitializedOrders(true);
+      }
+      return;
+    }
+
+    // New Order Notification (Admins)
+    if (currentUser?.role === 'admin' || currentUser?.role === 'superuser') {
+      const newOrders = orders.filter(o => !prevOrders.find(po => po.id === o.id));
+      newOrders.forEach(o => {
+        triggerNotification('New Order Received 🔔', {
+          body: `Order from ${o.customerName} for ₱${o.totalAmount.toFixed(0)}`,
+          tag: `new-order-${o.id}`
+        });
+      });
+    }
+
+    // Status Change Notification (Users)
+    orders.forEach(order => {
+      const oldOrder = prevOrders.find(po => po.id === order.id);
+      if (oldOrder && oldOrder.status !== order.status) {
+        if (order.userId === currentUser?.id) {
+          triggerNotification('Order Status Updated 🚀', {
+            body: `Your order is now ${order.status.toUpperCase().replace('-', ' ')}`,
+            tag: `status-update-${order.id}`
+          });
+        }
+      }
+    });
+
+    setPrevOrders(orders);
+  }, [orders, currentUser, hasInitializedOrders]);
+
+  const triggerNotification = (title: string, options: NotificationOptions) => {
+    if (!("Notification" in window)) return;
+    if (Notification.permission === "granted") {
+      new Notification(title, {
+        ...options,
+        icon: '/a360.png',
+      });
+
+      // Play notification sound
+      try {
+        const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2358/2358-preview.mp3'); // Short notification chime
+        audio.play().catch(e => {
+          // Many browsers block audio until the user interacts with the page (click/touch)
+          console.log('Audio playback prevented by browser policy. Interaction needed first.');
+        });
+      } catch (e) {
+        console.error('Error playing notification sound:', e);
+      }
+    }
+  };
+
   // Auth methods
   const signup = async (userData: { name: string; email: string; phone: string; address: string; password: string }) => {
     const { password, ...profile } = userData;
@@ -241,12 +343,24 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   };
 
   const requestCancellation = async (orderId: string, reason: string) => {
-    await updateDoc(doc(db, 'orders', orderId), {
-      cancellation: {
-        reason,
-        requestedAt: new Date().toISOString()
-      }
-    });
+    const orderRef = doc(db, 'orders', orderId);
+    const orderSnap = await getDoc(orderRef);
+
+    if (orderSnap.exists() && orderSnap.data().status === 'pending') {
+      // Auto-cancel if still pending
+      await updateDoc(orderRef, {
+        status: 'cancelled',
+        cancellation: null
+      });
+    } else {
+      // Request verification if already processing or beyond
+      await updateDoc(orderRef, {
+        cancellation: {
+          reason,
+          requestedAt: new Date().toISOString()
+        }
+      });
+    }
   };
 
   const resolveCancellation = async (orderId: string, approved: boolean) => {

@@ -268,10 +268,38 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       });
 
       setPrevOrders(orders);
+
+      // 1. Browser Badge (App Icon Number)
+      if ('setAppBadge' in navigator) {
+        const pendingCount = orders.filter(o => o.status === 'pending').length;
+        if (pendingCount > 0) {
+          (navigator as any).setAppBadge(pendingCount).catch((e: any) => console.log('Badge error:', e));
+        } else {
+          (navigator as any).clearAppBadge().catch((e: any) => console.log('Badge error:', e));
+        }
+      }
     } catch (err) {
       console.error('CRITICAL: Notification Effect Error:', err);
     }
   }, [orders, currentUser, hasInitializedOrders]);
+
+  // 2. Automatic Refresh on Browser Focus/Wake
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        console.log('App returned to foreground, checking for updates...');
+        // The onSnapshot listeners automatically reconnect, 
+        // but we can add extra logic here if needed.
+      }
+    };
+
+    window.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('focus', handleVisibilityChange);
+    return () => {
+      window.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('focus', handleVisibilityChange);
+    };
+  }, []);
 
   const triggerNotification = (title: string, options: NotificationOptions) => {
     console.log('Notification trigger:', title);

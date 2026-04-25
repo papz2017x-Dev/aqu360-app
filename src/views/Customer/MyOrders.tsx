@@ -362,5 +362,6 @@ export const MyOrders: React.FC = () => {
         )}
       </div>
     </div>
+  </div>
   );
 };

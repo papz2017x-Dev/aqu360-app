@@ -4,19 +4,44 @@ import { ShoppingCart, ClipboardList, User, LayoutDashboard, HomeIcon } from 'lu
 import { useStore } from '../store/Store';
 
 export const AppLayout = () => {
-  const { currentUser } = useStore();
+  const { currentUser, orders } = useStore();
   const location = useLocation();
   const isHome = location.pathname === '/';
 
   const canAccessAdmin = currentUser?.role === 'admin' || currentUser?.role === 'superuser';
+  const pendingOrdersCount = orders.filter(o => o.status === 'pending').length;
+  const showAdminBanner = canAccessAdmin && pendingOrdersCount > 0;
 
   return (
     <div className="mobile-app-container">
+      {/* Admin Alert Banner */}
+      {showAdminBanner && (
+        <div style={{
+          background: '#EF4444',
+          color: 'white',
+          padding: '0.6rem',
+          textAlign: 'center',
+          fontSize: '0.85rem',
+          fontWeight: 900,
+          position: 'sticky',
+          top: 0,
+          zIndex: 1000,
+          boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: '8px'
+        }}>
+          <span>⚠️ YOU HAVE {pendingOrdersCount} PENDING {pendingOrdersCount === 1 ? 'ORDER' : 'ORDERS'}!</span>
+          <NavLink to="/admin" style={{ color: 'white', textDecoration: 'underline', fontSize: '0.75rem' }}>VIEW NOW</NavLink>
+        </div>
+      )}
+
       {/* Top Header - Hidden on Home because Home has Hero Header */}
       {!isHome && (
         <header className="glass" style={{
           position: 'fixed',
-          top: 0,
+          top: showAdminBanner ? '2.5rem' : 0,
           left: 0,
           right: 0,
           height: '4rem',
@@ -25,7 +50,8 @@ export const AppLayout = () => {
           padding: '0 1.25rem',
           zIndex: 50,
           borderBottom: '1px solid var(--color-border)',
-          justifyContent: 'space-between'
+          justifyContent: 'space-between',
+          transition: 'top 0.3s ease'
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
             <div
@@ -64,7 +90,10 @@ export const AppLayout = () => {
       )}
 
       {/* Main Content Area */}
-      <main className="main-content" style={{ paddingTop: isHome ? 0 : '4rem' }}>
+      <main className="main-content" style={{ 
+        paddingTop: isHome ? (showAdminBanner ? '2.5rem' : 0) : (showAdminBanner ? '6.5rem' : '4rem'),
+        transition: 'padding-top 0.3s ease'
+      }}>
         <Outlet />
       </main>
 

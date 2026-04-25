@@ -320,11 +320,12 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
     // 3. Display Notification
     try {
-      if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.getRegistration().then(reg => {
+      const nav = navigator as any;
+      if ('serviceWorker' in nav) {
+        nav.serviceWorker.getRegistration().then((reg: any) => {
           if (reg && 'showNotification' in reg) {
             reg.showNotification(title, {
-              ...options,
+              ...(options as any),
               icon: '/a360.png',
               badge: '/a360.png',
               vibrate: [200, 100, 200],
@@ -333,17 +334,17 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           } else {
             // Fallback for browsers with SW but no showNotification (rare)
             // Only use 'new Notification' if we are NOT on a mobile device to avoid crashes
-            if (!/Mobi|Android|iPhone/i.test(navigator.userAgent)) {
+            if (!/Mobi|Android|iPhone/i.test(nav.userAgent)) {
               new Notification(title, { ...options, icon: '/a360.png' });
             }
           }
-        }).catch(err => {
+        }).catch((err: any) => {
           console.warn('Service Worker registration check failed:', err);
-          if (!/Mobi|Android|iPhone/i.test(navigator.userAgent)) {
+          if (!/Mobi|Android|iPhone/i.test(nav.userAgent)) {
             new Notification(title, { ...options, icon: '/a360.png' });
           }
         });
-      } else if (!/Mobi|Android|iPhone/i.test(navigator.userAgent)) {
+      } else if (!/Mobi|Android|iPhone/i.test(nav.userAgent)) {
         // Direct fallback for Desktop browsers without SW
         new Notification(title, { ...options, icon: '/a360.png' });
       }

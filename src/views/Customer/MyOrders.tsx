@@ -35,12 +35,17 @@ export const MyOrders: React.FC = () => {
   const myOrders = orders.filter(o => o.userId === currentUser?.id);
 
   const getStatusIcon = (status: Order['status']) => {
-    switch (status) {
-      case 'pending': return <Clock size={14} />;
-      case 'processing': return <Package size={14} />;
-      case 'out-for-delivery': return <Truck size={14} />;
-      case 'delivered': return <CheckCircle size={14} />;
-      case 'cancelled': return <XCircle size={14} />;
+    try {
+      switch (status) {
+        case 'pending': return <Clock size={14} />;
+        case 'processing': return <Package size={14} />;
+        case 'out-for-delivery': return <Truck size={14} />;
+        case 'delivered': return <CheckCircle size={14} />;
+        case 'cancelled': return <XCircle size={14} />;
+        default: return <Clock size={14} />;
+      }
+    } catch (e) {
+      return <Clock size={14} />;
     }
   };
 
@@ -78,11 +83,21 @@ export const MyOrders: React.FC = () => {
     }
   };
 
-  const formatDateTime = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) +
-      ' • ' +
-      date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+  const formatDateTime = (dateString: any) => {
+    try {
+      if (!dateString) return 'Just now';
+      const date = (dateString.toDate && typeof dateString.toDate === 'function') 
+        ? dateString.toDate() 
+        : new Date(dateString);
+      
+      if (isNaN(date.getTime())) return 'Recently';
+
+      return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) +
+        ' • ' +
+        date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+    } catch (e) {
+      return 'Recently';
+    }
   };
 
   const StatusStepper = ({ currentStatus, orderType }: { currentStatus: Order['status'], orderType: Order['orderType'] }) => {
@@ -347,6 +362,5 @@ export const MyOrders: React.FC = () => {
         )}
       </div>
     </div>
-  </div>
   );
 };

@@ -95,6 +95,7 @@ interface AppState {
   updateUserRole: (userId: string, role: UserRole) => Promise<void>;
   updateProfile: (userId: string, data: Partial<User>) => Promise<void>;
   deleteAccount: (userId: string) => Promise<void>;
+  requestNotificationPermission: () => Promise<boolean>;
 }
 
 const defaultProducts: Omit<Product, 'id'>[] = [
@@ -193,14 +194,20 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     const registerFCM = async () => {
       if (currentUser && "Notification" in window) {
         try {
-          // Note: You need to replace this with your actual VAPID key from Firebase Console
-          // Project Settings > Cloud Messaging > Web configuration > Web Push certificates
-          const VAPID_KEY = 'BBNbVLHkWte1rQD45yZMsxBB5wTByTOLHgT00kNgkdAOLUo0MyQKvBZIOEnyTjjGRHVCD6n5EoEt5sC661Z_Mgo'; // Placeholder
+          console.log('Attempting FCM Token registration...');
+          const VAPID_KEY = 'BBNbVLHkWte1rQD45yZMsxBB5wTByTOLHgT00kNgkdAOLUo0MyQKvBZIOEnyTjjGRHVCD6n5EoEt5sC661Z_Mgo'; 
 
-          const token = await getToken(messaging, { vapidKey: VAPID_KEY });
+          // Wait for service worker to be ready
+          const registration = await navigator.serviceWorker.ready;
+          
+          const token = await getToken(messaging, { 
+            vapidKey: VAPID_KEY,
+            serviceWorkerRegistration: registration
+          });
+
           if (token) {
             await updateDoc(doc(db, 'users', currentUser.id), { fcmToken: token });
-            console.log('FCM Token registered');
+            console.log('FCM Token successfully registered and saved to Firestore');
           }
         } catch (error) {
           console.error('FCM registration failed:', error);
@@ -226,59 +233,122 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [prevOrders, setPrevOrders] = useState<Order[]>([]);
 
   useEffect(() => {
-    if (!hasInitializedOrders) {
-      if (orders.length > 0) {
+    try {
+      if (!hasInitializedOrders) {
         setPrevOrders(orders);
         setHasInitializedOrders(true);
+        console.log('Notifications system initialized with', orders.length, 'existing orders');
+        return;
       }
-      return;
-    }
 
-    // New Order Notification (Admins)
-    if (currentUser?.role === 'admin' || currentUser?.role === 'superuser') {
-      const newOrders = orders.filter(o => !prevOrders.find(po => po.id === o.id));
-      newOrders.forEach(o => {
-        triggerNotification('New Order Received 🔔', {
-          body: `Order from ${o.customerName} for ₱${o.totalAmount.toFixed(0)}`,
-          tag: `new-order-${o.id}`
-        });
-      });
-    }
+      if (!currentUser) return;
 
-    // Status Change Notification (Users)
-    orders.forEach(order => {
-      const oldOrder = prevOrders.find(po => po.id === order.id);
-      if (oldOrder && oldOrder.status !== order.status) {
-        if (order.userId === currentUser?.id) {
-          triggerNotification('Order Status Updated 🚀', {
-            body: `Your order is now ${order.status.toUpperCase().replace('-', ' ')}`,
-            tag: `status-update-${order.id}`
+      // New Order Notification (Admins)
+      if (currentUser.role === 'admin' || currentUser.role === 'superuser') {
+        const newOrders = orders.filter(o => !prevOrders.find(po => po.id === o.id));
+        newOrders.forEach(o => {
+          triggerNotification('New Order Received 🔔', {
+            body: `Order from ${o.customerName} for ₱${o.totalAmount.toFixed(0)}`,
+            tag: `new-order-${o.id}`
           });
-        }
+        });
       }
-    });
 
-    setPrevOrders(orders);
+      // Status Change Notification (Users)
+      orders.forEach(order => {
+        const oldOrder = prevOrders.find(po => po.id === order.id);
+        if (oldOrder && oldOrder.status !== order.status) {
+          if (order.userId === currentUser?.id) {
+            triggerNotification('Order Status Updated 🚀', {
+              body: `Your order is now ${order.status.toUpperCase().replace('-', ' ')}`,
+              tag: `status-update-${order.id}`
+            });
+          }
+        }
+      });
+
+      setPrevOrders(orders);
+    } catch (err) {
+      console.error('CRITICAL: Notification Effect Error:', err);
+    }
   }, [orders, currentUser, hasInitializedOrders]);
 
   const triggerNotification = (title: string, options: NotificationOptions) => {
-    if (!("Notification" in window)) return;
-    if (Notification.permission === "granted") {
-      new Notification(title, {
-        ...options,
-        icon: '/a360.png',
-      });
+    console.log('Notification trigger:', title);
+    
+    // 1. Safe Audio
+    try {
+      const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2358/2358-preview.mp3');
+      audio.play().catch(e => console.log('Audio playback blocked or failed:', e.message));
+    } catch (e) { 
+      console.warn('Audio system error:', e); 
+    }
 
-      // Play notification sound
-      try {
-        const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2358/2358-preview.mp3'); // Short notification chime
-        audio.play().catch(() => {
-          // Many browsers block audio until the user interacts with the page (click/touch)
-          console.log('Audio playback prevented by browser policy. Interaction needed first.');
+    // 2. Check Notification Support and Permission
+    if (typeof Notification === 'undefined' || Notification.permission !== 'granted') {
+      console.log('Notification skipped: Unsupported or Permission not granted');
+      return;
+    }
+
+    // 3. Display Notification
+    try {
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.getRegistration().then(reg => {
+          if (reg && 'showNotification' in reg) {
+            reg.showNotification(title, {
+              ...options,
+              icon: '/a360.png',
+              badge: '/a360.png',
+              vibrate: [200, 100, 200],
+              data: { url: window.location.origin + '/orders' }
+            });
+          } else {
+            // Fallback for browsers with SW but no showNotification (rare)
+            // Only use 'new Notification' if we are NOT on a mobile device to avoid crashes
+            if (!/Mobi|Android|iPhone/i.test(navigator.userAgent)) {
+              new Notification(title, { ...options, icon: '/a360.png' });
+            }
+          }
+        }).catch(err => {
+          console.warn('Service Worker registration check failed:', err);
+          if (!/Mobi|Android|iPhone/i.test(navigator.userAgent)) {
+            new Notification(title, { ...options, icon: '/a360.png' });
+          }
         });
-      } catch (e) {
-        console.error('Error playing notification sound:', e);
+      } else if (!/Mobi|Android|iPhone/i.test(navigator.userAgent)) {
+        // Direct fallback for Desktop browsers without SW
+        new Notification(title, { ...options, icon: '/a360.png' });
       }
+    } catch (err) {
+      console.error('Fatal notification error:', err);
+    }
+  };
+
+  const requestNotificationPermission = async () => {
+    if (!("Notification" in window)) {
+      alert("This browser does not support desktop notifications");
+      return false;
+    }
+    
+    try {
+      const permission = await Notification.requestPermission();
+      if (permission === 'granted') {
+        // Re-trigger FCM registration
+        const VAPID_KEY = 'BBNbVLHkWte1rQD45yZMsxBB5wTByTOLHgT00kNgkdAOLUo0MyQKvBZIOEnyTjjGRHVCD6n5EoEt5sC661Z_Mgo';
+        const registration = await navigator.serviceWorker.ready;
+        const token = await getToken(messaging, { 
+          vapidKey: VAPID_KEY,
+          serviceWorkerRegistration: registration
+        });
+        if (token && currentUser) {
+          await updateDoc(doc(db, 'users', currentUser.id), { fcmToken: token });
+        }
+        return true;
+      }
+      return false;
+    } catch (err) {
+      console.error('Permission request failed:', err);
+      return false;
     }
   };
 
@@ -424,6 +494,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       requestCancellation, resolveCancellation,
       addProduct, updateProduct, deleteProduct,
       signup, login, logout, updateUserRole, updateProfile, deleteAccount,
+      requestNotificationPermission,
       addToCart, removeFromCart, updateCartItem, clearSelectedFromCart
     }}>
       {children}

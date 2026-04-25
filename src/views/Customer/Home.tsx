@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import { useStore } from '../../store/Store';
 import type { Product } from '../../store/Store';
-import { Search, ShoppingCart, Plus } from 'lucide-react';
+import { Search, ShoppingCart, Plus, Bell } from 'lucide-react';
 
 export const Home: React.FC = () => {
-  const { products, addToCart } = useStore();
+  const { products, addToCart, requestNotificationPermission } = useStore();
   const [searchQuery, setSearchQuery] = useState('');
   const [showAddedToast, setShowAddedToast] = useState(false);
 
@@ -43,47 +43,72 @@ export const Home: React.FC = () => {
       <div className="animate-slide-up">
         {/* Hero Header matching the image */}
         <div className="aqua-header" style={{ padding: '2rem 1.5rem 2.5rem' }}>
-          <div className="flex items-center gap-4">
-            <div
+          <div className="flex justify-between items-center">
+            <div className="flex items-center gap-4">
+              <div
+                style={{
+                  width: '56px',
+                  height: '56px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  borderRadius: '50%',
+                  overflow: 'hidden',
+                }}
+              >
+                <img
+                  src="/a360.png"
+                  alt="Logo"
+                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                />
+              </div>
+              <div>
+                <h1
+                  style={{
+                    fontSize: '1.75rem',
+                    color: 'white',
+                    margin: 0,
+                    fontWeight: 900,
+                    letterSpacing: '-0.03em',
+                  }}
+                >
+                  Aqua360
+                </h1>
+                <p
+                  style={{
+                    fontSize: '0.9rem',
+                    color: 'rgba(255, 255, 255, 0.9)',
+                    margin: 0,
+                    fontWeight: 500,
+                  }}
+                >
+                  Fresh Water, Delivered Fast
+                </p>
+              </div>
+            </div>
+
+            <button 
+              onClick={async () => {
+                const granted = await requestNotificationPermission();
+                if (granted) alert('Notifications enabled successfully!');
+              }}
               style={{
-                width: '56px',
-                height: '56px',
                 display: 'flex',
                 alignItems: 'center',
-                justifyContent: 'center',
-                borderRadius: '50%',   // makes it round
-                overflow: 'hidden',    // clips the image inside the circle
+                gap: '8px',
+                padding: '10px 16px',
+                background: 'rgba(255, 255, 255, 0.2)',
+                backdropFilter: 'blur(10px)',
+                borderRadius: '50px',
+                color: 'white',
+                fontSize: '0.75rem',
+                fontWeight: 800,
+                border: '1px solid rgba(255, 255, 255, 0.3)',
+                cursor: 'pointer'
               }}
             >
-              <img
-                src="/a360.png"
-                alt="Logo"
-                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-              />
-            </div>
-            <div>
-              <h1
-                style={{
-                  fontSize: '1.75rem',
-                  color: 'white',
-                  margin: 0,
-                  fontWeight: 900,
-                  letterSpacing: '-0.03em',
-                }}
-              >
-                Aqua360
-              </h1>
-              <p
-                style={{
-                  fontSize: '0.9rem',
-                  color: 'rgba(255, 255, 255, 0.9)',
-                  margin: 0,
-                  fontWeight: 500,
-                }}
-              >
-                Fresh Water, Delivered Fast
-              </p>
-            </div>
+              <Bell size={14} /> Enable Notifs
+            </button>
           </div>
 
 

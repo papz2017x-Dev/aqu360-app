@@ -3,7 +3,7 @@ import { useStore } from '../../store/Store';
 import type { Order, OrderStatus } from '../../store/Store';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import L from 'leaflet';
-import { List, Map as MapIcon, Truck, Store, MapPin, ChevronLeft } from 'lucide-react';
+import { List, Map as MapIcon, Truck, Store, MapPin, ChevronLeft, Banknote } from 'lucide-react';
 
 const getStatusMarker = (status: OrderStatus) => {
   let color = '#3B82F6';
@@ -96,6 +96,15 @@ export const ManageOrders: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                     }}>
                       {order.orderType === 'delivery' ? <Truck size={12} /> : <Store size={12} />}
                       {order.orderType}
+                    </div>
+                    <div style={{ 
+                      display: 'flex', alignItems: 'center', gap: '4px', padding: '3px 8px', 
+                      background: '#F0FDF4', 
+                      color: '#15803D', 
+                      borderRadius: '20px', fontSize: '0.65rem', fontWeight: 900, textTransform: 'uppercase'
+                    }}>
+                      <Banknote size={12} />
+                      {order.paymentMethod?.replace('-', ' ') || 'COD'}
                     </div>
                     <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#9CA3AF' }}>{new Date(order.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                   </div>

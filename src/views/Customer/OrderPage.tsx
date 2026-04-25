@@ -373,6 +373,7 @@ export const OrderPage: React.FC = () => {
               >
                 <option value="cod">Cash on Delivery (COD)</option>
                 <option value="gcash">GCash</option>
+                <option value="on-pickup">On Pick-up</option>
                 <option value="arrangement">Arrangement</option>
 
               </select>
@@ -403,7 +404,7 @@ export const OrderPage: React.FC = () => {
               <div style={{ background: 'var(--color-bg)', padding: '0.75rem', borderRadius: '10px', fontSize: '0.75rem', color: 'var(--color-text-muted)', display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1.5rem' }}>
                 <Banknote size={16} className="text-success" />
                 <span>
-                  {paymentMethod === 'cod' ? 'Cash on Delivery' : paymentMethod === 'gcash' ? 'GCash' : 'Arrangement'}
+                  {paymentMethod === 'cod' ? 'Cash on Delivery' : paymentMethod === 'gcash' ? 'GCash' : paymentMethod === 'on-pickup' ? 'On Pick-up' : 'Arrangement'}
                 </span>
               </div>
             </div>

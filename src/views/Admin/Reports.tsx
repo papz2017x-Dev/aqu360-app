@@ -1,23 +1,36 @@
 import React, { useMemo } from 'react';
 import { useStore } from '../../store/Store';
-import { BarChart3, TrendingUp, Package, Calendar, ArrowUpRight, ChevronLeft } from 'lucide-react';
+import { BarChart3, TrendingUp, Package, Calendar, ArrowUpRight, ChevronLeft, Truck, Store, Banknote } from 'lucide-react';
 
 export const Reports: React.FC<{ onBack: () => void }> = ({ onBack }) => {
   const { orders, products } = useStore();
+  const [filterDate, setFilterDate] = React.useState<string>(''); // empty means All Time
 
-  const deliveredOrders = useMemo(() => orders.filter(o => o.status === 'delivered'), [orders]);
+  const paidOrders = useMemo(() => {
+    let filtered = orders.filter(o => o.isPaid);
+    if (filterDate) {
+      filtered = filtered.filter(o => o.paidAt?.startsWith(filterDate));
+    }
+    return filtered;
+  }, [orders, filterDate]);
 
   const stats = useMemo(() => {
-    const totalRevenue = deliveredOrders.reduce((sum, o) => sum + o.totalAmount, 0);
-    const totalItems = deliveredOrders.reduce((sum, o) => sum + o.items.reduce((iSum, i) => iSum + i.quantity, 0), 0);
-    const avgOrderValue = deliveredOrders.length > 0 ? totalRevenue / deliveredOrders.length : 0;
+    const totalRevenue = paidOrders.reduce((sum, o) => sum + o.totalAmount, 0);
+    const totalItems = paidOrders.reduce((sum, o) => sum + o.items.reduce((iSum, i) => iSum + i.quantity, 0), 0);
+    const avgOrderValue = paidOrders.length > 0 ? totalRevenue / paidOrders.length : 0;
     
-    return { totalRevenue, totalOrders: deliveredOrders.length, totalItems, avgOrderValue };
-  }, [deliveredOrders]);
+    // Daily calculation
+    const today = new Date().toISOString().split('T')[0];
+    const todayRevenue = paidOrders
+      .filter(o => o.paidAt?.startsWith(today))
+      .reduce((sum, o) => sum + o.totalAmount, 0);
+
+    return { totalRevenue, totalOrders: paidOrders.length, totalItems, avgOrderValue, todayRevenue };
+  }, [paidOrders]);
 
   const productSales = useMemo(() => {
     const sales: Record<string, { name: string; quantity: number; revenue: number }> = {};
-    deliveredOrders.forEach(order => {
+    paidOrders.forEach(order => {
       order.items.forEach(item => {
         if (!sales[item.productId]) {
           const product = products.find(p => p.id === item.productId);
@@ -28,7 +41,7 @@ export const Reports: React.FC<{ onBack: () => void }> = ({ onBack }) => {
       });
     });
     return Object.values(sales).sort((a, b) => b.revenue - a.revenue);
-  }, [deliveredOrders, products]);
+  }, [paidOrders, products]);
 
   return (
     <div className="animate-slide-up pb-10" style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
@@ -38,8 +51,22 @@ export const Reports: React.FC<{ onBack: () => void }> = ({ onBack }) => {
           <h3 style={{ fontSize: '0.75rem', fontWeight: 800, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '2px' }}>Analytics Overview</h3>
           <h2 style={{ fontSize: '1.5rem', fontWeight: 900, color: '#111827', margin: 0 }}>Sales Performance</h2>
         </div>
-        <div style={{ background: '#F3F4F6', padding: '6px 12px', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.75rem', fontWeight: 800, color: '#4B5563' }}>
-          <Calendar size={14} /> All Time
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <input 
+            type="date" 
+            className="input" 
+            style={{ width: 'auto', padding: '4px 8px', height: 'auto', fontSize: '0.75rem', fontWeight: 800, borderRadius: '10px', background: '#F3F4F6', border: 'none' }}
+            value={filterDate}
+            onChange={(e) => setFilterDate(e.target.value)}
+          />
+          {filterDate && (
+            <button 
+              onClick={() => setFilterDate('')}
+              style={{ fontSize: '0.7rem', fontWeight: 800, color: 'var(--color-primary)', border: 'none', background: 'none', cursor: 'pointer' }}
+            >
+              CLEAR
+            </button>
+          )}
         </div>
       </div>
 
@@ -47,12 +74,12 @@ export const Reports: React.FC<{ onBack: () => void }> = ({ onBack }) => {
         <div style={{ position: 'absolute', top: '-20px', right: '-20px', opacity: 0.1 }}><TrendingUp size={150} /></div>
         <div style={{ position: 'relative', zIndex: 1 }}>
           <div style={{ fontSize: '0.875rem', fontWeight: 700, opacity: 0.8, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '8px' }}>Total Gross Revenue</div>
-          <div style={{ fontSize: '3rem', fontWeight: 900, marginBottom: '1rem' }}>₱{stats.totalRevenue.toLocaleString()}</div>
+          <div style={{ fontSize: '3rem', fontWeight: 900, marginBottom: '0.5rem' }}>₱{stats.totalRevenue.toLocaleString()}</div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <div style={{ background: 'rgba(255,255,255,0.2)', padding: '4px 10px', borderRadius: '10px', fontSize: '0.75rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '4px' }}>
-              <ArrowUpRight size={14} /> +12.5%
+              <ArrowUpRight size={14} /> TODAY: ₱{stats.todayRevenue.toLocaleString()}
             </div>
-            <div style={{ fontSize: '0.75rem', fontWeight: 600, opacity: 0.7 }}>vs previous period</div>
+            <div style={{ fontSize: '0.75rem', fontWeight: 600, opacity: 0.7 }}>Sales recorded today</div>
           </div>
         </div>
       </div>
@@ -97,6 +124,35 @@ export const Reports: React.FC<{ onBack: () => void }> = ({ onBack }) => {
         <p style={{ fontSize: '0.9rem', color: '#1E40AF', lineHeight: '1.6', fontWeight: 500, margin: 0 }}>
           Your sales are currently driven by <span style={{ fontWeight: 800 }}>{productSales[0]?.name || 'N/A'}</span>. The average order value is <span style={{ fontWeight: 800 }}>₱{stats.avgOrderValue.toFixed(0)}</span>, which is healthy for your current scale.
         </p>
+      </div>
+
+      <div style={{ background: 'white', padding: '1.75rem', borderRadius: '32px', border: '1px solid #F3F4F6', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.02)' }}>
+        <h4 style={{ fontSize: '1.125rem', fontWeight: 900, color: '#111827', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <div style={{ background: '#F0FDF4', color: '#10B981', padding: '8px', borderRadius: '12px' }}><Package size={20} /></div>
+          Transactions {filterDate ? `for ${filterDate}` : '(All Time)'}
+        </h4>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+          {paidOrders.length > 0 ? paidOrders.map((order) => (
+            <div key={order.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem', background: '#F9FAFB', borderRadius: '20px', border: '1px solid #F3F4F6' }}>
+              <div>
+                <div style={{ fontWeight: 800, fontSize: '0.9rem', color: '#111827' }}>{order.customerName}</div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '4px' }}>
+                  <div style={{ fontSize: '0.65rem', fontWeight: 800, color: '#9CA3AF', textTransform: 'uppercase' }}>
+                    {order.orderType === 'delivery' ? <Truck size={12} style={{ display: 'inline', marginRight: '4px' }} /> : <Store size={12} style={{ display: 'inline', marginRight: '4px' }} />}
+                    {order.orderType}
+                  </div>
+                  <div style={{ fontSize: '0.65rem', fontWeight: 800, color: '#10B981', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <Banknote size={12} /> {order.paymentMethod?.toUpperCase() || 'PAID'}
+                  </div>
+                </div>
+              </div>
+              <div style={{ textAlign: 'right' }}>
+                <div style={{ fontWeight: 900, color: '#111827' }}>₱{order.totalAmount.toFixed(0)}</div>
+                <div style={{ fontSize: '0.65rem', fontWeight: 600, color: '#9CA3AF' }}>{new Date(order.paidAt || order.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
+              </div>
+            </div>
+          )) : <div style={{ textAlign: 'center', padding: '2rem', color: '#9CA3AF', fontStyle: 'italic', fontSize: '0.875rem' }}>No transactions recorded for this period</div>}
+        </div>
       </div>
     </div>
   );

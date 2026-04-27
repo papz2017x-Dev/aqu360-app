@@ -337,7 +337,16 @@ export const MyOrders: React.FC = () => {
                       </button>
                     )
                   )}
-                  {(order.status === 'cancelled' || order.status === 'delivered') && (
+                  {order.status === 'delivered' && (
+                    <button 
+                      className="btn w-full"
+                      style={{ marginTop: '1rem', background: 'var(--color-primary-light)', color: 'var(--color-primary)', padding: '0.75rem', borderRadius: '12px', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}
+                      onClick={(e) => { e.stopPropagation(); handleReorder(order); }}
+                    >
+                      <RefreshCw size={16} /> Reorder
+                    </button>
+                  )}
+                  {order.status === 'cancelled' && (
                     <div className="flex gap-2" style={{ marginTop: '1rem' }}>
                       <button 
                         className="btn"

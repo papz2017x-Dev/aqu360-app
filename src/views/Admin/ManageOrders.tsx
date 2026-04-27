@@ -3,7 +3,7 @@ import { useStore } from '../../store/Store';
 import type { Order, OrderStatus } from '../../store/Store';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import L from 'leaflet';
-import { List, Map as MapIcon, Truck, Store, MapPin, ChevronLeft, Banknote } from 'lucide-react';
+import { List, Map as MapIcon, Truck, Store, MapPin, ChevronLeft, Banknote, CheckCircle } from 'lucide-react';
 
 const getStatusMarker = (status: OrderStatus) => {
   let color = '#3B82F6';
@@ -21,10 +21,11 @@ const getStatusMarker = (status: OrderStatus) => {
 };
 
 export const ManageOrders: React.FC<{ onBack: () => void }> = ({ onBack }) => {
-  const { orders, updateOrderStatus, products, resolveCancellation } = useStore();
+  const { orders, updateOrderStatus, products, resolveCancellation, markOrderAsPaid } = useStore();
   const [viewMode, setViewMode] = useState<'list' | 'map'>('list');
   const [showMapOrderId, setShowMapOrderId] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<OrderStatus | 'all_active'>('all_active');
+  const [paymentModalOrder, setPaymentModalOrder] = useState<Order | null>(null);
 
   const pendingCount = orders.filter(o => o.status === 'pending').length;
   const statuses: OrderStatus[] = ['pending', 'processing', 'out-for-delivery', 'delivered', 'cancelled'];
@@ -82,7 +83,13 @@ export const ManageOrders: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                 boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)',
                 borderRadius: '24px'
               }}
-              onClick={() => setShowMapOrderId(showMapOrderId === order.id ? null : order.id)}
+              onClick={() => {
+                if (!order.isPaid) {
+                  setPaymentModalOrder(order);
+                } else {
+                  setShowMapOrderId(showMapOrderId === order.id ? null : order.id);
+                }
+              }}
             >
               <div className="flex justify-between items-start mb-4">
                 <div>
@@ -141,22 +148,44 @@ export const ManageOrders: React.FC<{ onBack: () => void }> = ({ onBack }) => {
 
               <div className="flex items-center justify-between pt-4 border-t border-gray-100">
                 <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#9CA3AF' }}>#{order.id.substring(0, 8).toUpperCase()}</span>
-                <select 
-                  className="input" 
-                  style={{ width: 'auto', padding: '0.5rem 1rem', height: 'auto', fontSize: '0.8rem', fontWeight: 800, borderRadius: '12px', background: '#F3F4F6', border: 'none' }} 
-                  value={order.status} 
-                  onClick={(e) => e.stopPropagation()}
-                  onChange={(e) => { e.stopPropagation(); updateOrderStatus(order.id, e.target.value as OrderStatus); }}
-                >
-                  {statuses.map(s => {
-                    let label = s.replace('-', ' ').toUpperCase();
-                    if (order.orderType === 'pickup') {
-                      if (s === 'out-for-delivery') label = 'READY FOR PICKUP';
-                      if (s === 'delivered') label = 'PICKED UP';
-                    }
-                    return <option key={s} value={s}>{label}</option>;
-                  })}
-                </select>
+                <div className="flex items-center gap-3">
+                  {order.isPaid ? (
+                    <div style={{ 
+                      fontSize: '0.75rem', fontWeight: 800, color: '#10B981', 
+                      background: '#D1FAE5', padding: '0.5rem 1rem', borderRadius: '12px',
+                      display: 'flex', alignItems: 'center', gap: '4px'
+                    }}>
+                      <CheckCircle size={14} /> PAID
+                    </div>
+                  ) : null}
+                  <select 
+                    className="input" 
+                    style={{ width: 'auto', padding: '0.5rem 1rem', height: 'auto', fontSize: '0.8rem', fontWeight: 800, borderRadius: '12px', background: '#F3F4F6', border: 'none' }} 
+                    value={order.status} 
+                    onClick={(e) => e.stopPropagation()}
+                    onChange={(e) => { 
+                      e.stopPropagation(); 
+                      const newStatus = e.target.value as OrderStatus;
+                      console.log('Status change detected:', newStatus);
+                      
+                      // Trigger modal immediately if marking as final status
+                      if (newStatus === 'delivered' && !order.isPaid) {
+                        setPaymentModalOrder(order);
+                      }
+                      
+                      updateOrderStatus(order.id, newStatus); 
+                    }}
+                  >
+                    {statuses.map(s => {
+                      let label = s.replace('-', ' ').toUpperCase();
+                      if (order.orderType === 'pickup') {
+                        if (s === 'out-for-delivery') label = 'READY FOR PICKUP';
+                        if (s === 'delivered') label = 'PICKED UP';
+                      }
+                      return <option key={s} value={s}>{label}</option>;
+                    })}
+                  </select>
+                </div>
               </div>
 
               {order.cancellation && (
@@ -201,6 +230,47 @@ export const ManageOrders: React.FC<{ onBack: () => void }> = ({ onBack }) => {
               </Marker>
             ))}
           </MapContainer>
+        </div>
+      )}
+      {/* Payment Modal */}
+      {paymentModalOrder && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 2000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2rem' }}>
+          <div className="animate-slide-up" style={{ background: 'white', borderRadius: '32px', padding: '2rem', width: '100%', maxWidth: '400px' }}>
+            <h3 style={{ fontSize: '1.5rem', fontWeight: 900, marginBottom: '0.5rem' }}>Record Payment</h3>
+            <p style={{ color: '#6B7280', fontSize: '0.9rem', marginBottom: '1.5rem' }}>Select how the customer paid for this order.</p>
+            
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginBottom: '2rem' }}>
+              <button 
+                className="btn" 
+                style={{ background: '#F3F4F6', padding: '1rem', borderRadius: '16px', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '12px' }}
+                onClick={() => { markOrderAsPaid(paymentModalOrder.id, 'cod'); setPaymentModalOrder(null); }}
+              >
+                <Banknote size={24} className="text-primary" /> Cash on Delivery
+              </button>
+              <button 
+                className="btn" 
+                style={{ background: '#F3F4F6', padding: '1rem', borderRadius: '16px', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '12px' }}
+                onClick={() => { markOrderAsPaid(paymentModalOrder.id, 'gcash'); setPaymentModalOrder(null); }}
+              >
+                <div style={{ background: '#0055FF', color: 'white', padding: '4px 8px', borderRadius: '6px', fontSize: '0.7rem' }}>GCash</div> Digital Payment
+              </button>
+              <button 
+                className="btn" 
+                style={{ background: '#F3F4F6', padding: '1rem', borderRadius: '16px', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '12px' }}
+                onClick={() => { markOrderAsPaid(paymentModalOrder.id, 'on-pickup'); setPaymentModalOrder(null); }}
+              >
+                <Store size={24} className="text-primary" /> Paid on Pickup
+              </button>
+            </div>
+            
+            <button 
+              className="btn w-full" 
+              style={{ color: '#9CA3AF', fontWeight: 700 }}
+              onClick={() => setPaymentModalOrder(null)}
+            >
+              Cancel
+            </button>
+          </div>
         </div>
       )}
     </div>

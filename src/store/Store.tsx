@@ -45,6 +45,8 @@ export interface Order {
   status: OrderStatus;
   paymentMethod?: PaymentMethod;
   createdAt: string;
+  isPaid?: boolean;
+  paidAt?: string;
   cancellation?: {
     reason: string;
     requestedAt: string;
@@ -84,6 +86,7 @@ interface AppState {
   addOrder: (order: Omit<Order, 'id' | 'createdAt' | 'status'>) => Promise<void>;
   updateOrderStatus: (orderId: string, status: OrderStatus) => Promise<void>;
   deleteOrder: (orderId: string) => Promise<void>;
+  markOrderAsPaid: (orderId: string, method?: PaymentMethod) => Promise<void>;
   requestCancellation: (orderId: string, reason: string) => Promise<void>;
   resolveCancellation: (orderId: string, approved: boolean) => Promise<void>;
   addProduct: (product: Omit<Product, 'id'>) => Promise<void>;
@@ -437,6 +440,15 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     await updateDoc(doc(db, 'orders', orderId), { status });
   };
 
+  const markOrderAsPaid = async (orderId: string, method?: PaymentMethod) => {
+    const updateData: any = {
+      isPaid: true,
+      paidAt: new Date().toISOString()
+    };
+    if (method) updateData.paymentMethod = method;
+    await updateDoc(doc(db, 'orders', orderId), updateData);
+  };
+
   const deleteOrder = async (orderId: string) => {
     await deleteDoc(doc(db, 'orders', orderId));
   };
@@ -520,6 +532,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     <StoreContext.Provider value={{
       products, orders, users, currentUser, authLoading, deliveryFee, cart,
       setGlobalDeliveryFee, addOrder, updateOrderStatus, deleteOrder,
+      markOrderAsPaid,
       requestCancellation, resolveCancellation,
       addProduct, updateProduct, deleteProduct,
       signup, login, logout, updateUserRole, updateProfile, deleteAccount,

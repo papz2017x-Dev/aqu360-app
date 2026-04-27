@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { useStore } from '../../store/Store';
-import { BarChart3, TrendingUp, Package, Calendar, ArrowUpRight, ChevronLeft, Truck, Store, Banknote } from 'lucide-react';
+import { BarChart3, TrendingUp, Package, ArrowUpRight, ChevronLeft, Truck, Store, Banknote } from 'lucide-react';
 
 export const Reports: React.FC<{ onBack: () => void }> = ({ onBack }) => {
   const { orders, products } = useStore();

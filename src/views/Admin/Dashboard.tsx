@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useStore } from '../../store/Store';
 import {
   LayoutDashboard, List, Store, BarChart3,
@@ -12,17 +13,30 @@ import { Reports } from './Reports';
 
 export const Dashboard: React.FC = () => {
   const { orders, currentUser } = useStore();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [activeView, setActiveView] = useState<'hub' | 'orders' | 'stock' | 'reports' | 'team' | 'settings'>('hub');
+
+  useEffect(() => {
+    const view = searchParams.get('view');
+    if (view && ['hub', 'orders', 'stock', 'reports', 'team', 'settings'].includes(view)) {
+      setActiveView(view as any);
+    }
+  }, [searchParams]);
+
+  const handleBack = () => {
+    setActiveView('hub');
+    setSearchParams({});
+  };
 
   const isSuperuser = currentUser?.role === 'superuser';
   const pendingOrders = orders.filter(o => o.status === 'pending').length;
   const totalRevenue = orders.filter(o => o.status === 'delivered').reduce((sum, o) => sum + o.totalAmount, 0);
 
-  if (activeView === 'orders') return <ManageOrders onBack={() => setActiveView('hub')} />;
-  if (activeView === 'stock') return <ManageStock onBack={() => setActiveView('hub')} />;
-  if (activeView === 'reports') return <Reports onBack={() => setActiveView('hub')} />;
-  if (activeView === 'team') return <ManageTeam onBack={() => setActiveView('hub')} />;
-  if (activeView === 'settings') return <ManageSettings onBack={() => setActiveView('hub')} />;
+  if (activeView === 'orders') return <ManageOrders onBack={handleBack} />;
+  if (activeView === 'stock') return <ManageStock onBack={handleBack} />;
+  if (activeView === 'reports') return <Reports onBack={handleBack} />;
+  if (activeView === 'team') return <ManageTeam onBack={handleBack} />;
+  if (activeView === 'settings') return <ManageSettings onBack={handleBack} />;
 
   return (
     <div className="animate-slide-up pb-20">

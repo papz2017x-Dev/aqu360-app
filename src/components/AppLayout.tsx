@@ -33,7 +33,7 @@ export const AppLayout = () => {
           gap: '8px'
         }}>
           <span>⚠️ YOU HAVE {pendingOrdersCount} PENDING {pendingOrdersCount === 1 ? 'ORDER' : 'ORDERS'}!</span>
-          <NavLink to="/admin" style={{ color: 'white', textDecoration: 'underline', fontSize: '0.75rem' }}>VIEW NOW</NavLink>
+          <NavLink to="/admin?view=orders" style={{ color: 'white', textDecoration: 'underline', fontSize: '0.75rem', fontWeight: 900 }}>VIEW NOW</NavLink>
         </div>
       )}
 

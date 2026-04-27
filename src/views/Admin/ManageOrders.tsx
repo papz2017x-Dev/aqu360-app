@@ -78,9 +78,9 @@ export const ManageOrders: React.FC<{ onBack: () => void }> = ({ onBack }) => {
               style={{ 
                 padding: '1.5rem', 
                 cursor: 'pointer',
-                background: 'white',
-                border: showMapOrderId === order.id ? '2px solid var(--color-primary)' : '1px solid #F3F4F6',
-                boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)',
+                background: order.isPaid ? '#F0FDF4' : 'white',
+                border: order.isPaid ? '1px solid #BBF7D0' : (showMapOrderId === order.id ? '2px solid var(--color-primary)' : '1px solid #F3F4F6'),
+                boxShadow: order.isPaid ? 'none' : '0 4px 6px -1px rgba(0, 0, 0, 0.05)',
                 borderRadius: '24px'
               }}
               onClick={() => {
@@ -162,6 +162,7 @@ export const ManageOrders: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                     className="input" 
                     style={{ width: 'auto', padding: '0.5rem 1rem', height: 'auto', fontSize: '0.8rem', fontWeight: 800, borderRadius: '12px', background: '#F3F4F6', border: 'none' }} 
                     value={order.status} 
+                    disabled={order.isPaid}
                     onClick={(e) => e.stopPropagation()}
                     onChange={(e) => { 
                       e.stopPropagation(); 

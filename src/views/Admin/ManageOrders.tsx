@@ -116,7 +116,20 @@ export const ManageOrders: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                     <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#9CA3AF' }}>{new Date(order.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                   </div>
                 </div>
-                <div style={{ fontWeight: 900, fontSize: '1.25rem', color: 'var(--color-primary)' }}>₱{order.totalAmount.toFixed(0)}</div>
+                <div className="flex flex-col items-end">
+                  <div style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--color-primary)' }}>
+                    ₱{order.totalAmount.toFixed(2)}
+                  </div>
+                  {order.isPaid && (
+                    <div style={{ 
+                      fontSize: '0.65rem', fontWeight: 900, color: '#10B981', 
+                      background: '#D1FAE5', padding: '2px 8px', borderRadius: '8px', 
+                      marginTop: '4px', display: 'flex', alignItems: 'center', gap: '4px' 
+                    }}>
+                      <CheckCircle size={10} /> PAID
+                    </div>
+                  )}
+                </div>
               </div>
 
               <div className="flex items-start gap-2 mb-4">
@@ -258,9 +271,9 @@ export const ManageOrders: React.FC<{ onBack: () => void }> = ({ onBack }) => {
               <button 
                 className="btn" 
                 style={{ background: '#F3F4F6', padding: '1rem', borderRadius: '16px', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '12px' }}
-                onClick={() => { markOrderAsPaid(paymentModalOrder.id, 'on-pickup'); setPaymentModalOrder(null); }}
+                onClick={() => { markOrderAsPaid(paymentModalOrder.id, 'arrangement'); setPaymentModalOrder(null); }}
               >
-                <Store size={24} className="text-primary" /> Paid on Pickup
+                <div style={{ background: '#F59E0B', color: 'white', padding: '4px 8px', borderRadius: '6px', fontSize: '0.7rem' }}>Custom</div> On Arrangement
               </button>
             </div>
             

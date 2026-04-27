@@ -317,8 +317,19 @@ export const MyOrders: React.FC = () => {
                         <><Store size={18} style={{ color: '#10B981' }} /> Pickup</>
                       )}
                     </div>
-                    <div style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--color-primary)' }}>
-                      ₱{order.totalAmount.toFixed(2)}
+                    <div className="flex flex-col items-end">
+                      <div style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--color-primary)' }}>
+                        ₱{order.totalAmount.toFixed(2)}
+                      </div>
+                      {order.isPaid && (
+                        <div style={{ 
+                          fontSize: '0.65rem', fontWeight: 900, color: '#10B981', 
+                          background: '#D1FAE5', padding: '2px 8px', borderRadius: '8px', 
+                          marginTop: '4px', display: 'flex', alignItems: 'center', gap: '4px' 
+                        }}>
+                          <CheckCircle size={10} /> PAID
+                        </div>
+                      )}
                     </div>
                   </div>
 

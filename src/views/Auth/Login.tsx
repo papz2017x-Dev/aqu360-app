@@ -1,15 +1,53 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useStore } from '../../store/Store';
-import { LogIn, Mail, Lock } from 'lucide-react';
+import { LogIn, Mail, Lock, X, Key, Copy, Check, AlertCircle } from 'lucide-react';
 
 export const Login: React.FC = () => {
-  const { login } = useStore();
+  const { login, resetForgottenPassword } = useStore();
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+
+  // Forgot password states
+  const [showForgotModal, setShowForgotModal] = useState(false);
+  const [forgotEmail, setForgotEmail] = useState('');
+  const [forgotLoading, setForgotLoading] = useState(false);
+  const [forgotError, setForgotError] = useState('');
+  const [tempPasswordToShow, setTempPasswordToShow] = useState('');
+  const [isFallbackSent, setIsFallbackSent] = useState(false);
+  const [copied, setCopied] = useState(false);
+
+  const handleForgotSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setForgotLoading(true);
+    setForgotError('');
+    const res = await resetForgottenPassword(forgotEmail);
+    setForgotLoading(false);
+    if (res.success) {
+      if (res.isFallback) {
+        setIsFallbackSent(true);
+      } else if (res.tempPassword) {
+        setTempPasswordToShow(res.tempPassword);
+      }
+    } else {
+      setForgotError(res.error || 'Failed to request temporary password.');
+    }
+  };
+
+  const handleCopyPassword = () => {
+    navigator.clipboard.writeText(tempPasswordToShow);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleCloseAndPrefill = () => {
+    setEmail(forgotEmail);
+    setPassword(tempPasswordToShow);
+    setShowForgotModal(false);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -100,7 +138,23 @@ export const Login: React.FC = () => {
 
           {/* Password Allowance */}
           <div>
-            <label className="text-sm font-black text-gray-700 mb-3 block uppercase tracking-wider ml-1">Password</label>
+            <div className="flex justify-between items-center mb-3">
+              <label className="text-sm font-black text-gray-700 block uppercase tracking-wider ml-1">Password</label>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowForgotModal(true);
+                  setForgotEmail('');
+                  setForgotError('');
+                  setTempPasswordToShow('');
+                  setIsFallbackSent(false);
+                }}
+                className="text-xs font-bold text-primary hover:underline"
+                style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
+              >
+                Forgot Password?
+              </button>
+            </div>
             <div className="flex items-center gap-4 bg-gray-50 rounded-2xl px-5 border border-gray-200 focus-within:border-primary focus-within:bg-white transition-all duration-300">
               <Lock size={20} className="text-gray-400" />
               <input
@@ -162,6 +216,154 @@ export const Login: React.FC = () => {
           </div>
         </div>
       </div> */}
+
+      {/* Forgot Password Modal */}
+      {showForgotModal && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0,0,0,0.4)',
+          backdropFilter: 'blur(4px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000,
+          padding: '1.5rem'
+        }}>
+          <div className="bg-white rounded-3xl p-8 w-full animate-slide-up" style={{ maxWidth: '420px', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)' }}>
+            <div className="flex justify-between items-center mb-6">
+              <h3 style={{ fontSize: '1.5rem', fontWeight: 900, color: 'var(--color-primary)', margin: 0 }}>Reset Password</h3>
+              <button
+                onClick={() => setShowForgotModal(false)}
+                style={{ background: 'none', border: 'none', color: '#9CA3AF', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
+              >
+                <X size={24} />
+              </button>
+            </div>
+
+            {!tempPasswordToShow && !isFallbackSent ? (
+              <form onSubmit={handleForgotSubmit} className="flex-col gap-5" style={{ display: 'flex' }}>
+                <p className="text-muted text-sm font-medium leading-relaxed" style={{ margin: 0 }}>
+                  Enter your email address below. We'll generate a temporary password for you to sign in and update your password.
+                </p>
+
+                {forgotError && (
+                  <div style={{ padding: '0.75rem 1rem', background: '#FEF2F2', color: '#DC2626', borderRadius: '12px', fontSize: '0.8rem', fontWeight: 700, border: '1px solid #FEE2E2', display: 'flex', gap: '8px', alignItems: 'center' }}>
+                    <AlertCircle size={16} />
+                    <span>{forgotError}</span>
+                  </div>
+                )}
+
+                <div>
+                  <label className="text-[10px] font-black text-gray-500 mb-2 block uppercase tracking-wider ml-1">Email Address</label>
+                  <div className="flex items-center gap-4 bg-gray-50 rounded-2xl px-4 border border-gray-200 focus-within:border-primary focus-within:bg-white transition-all duration-300">
+                    <Mail size={18} className="text-gray-400" />
+                    <input
+                      type="email"
+                      className="input"
+                      style={{ border: 'none', background: 'transparent', padding: '1rem 0', fontWeight: 600, fontSize: '0.95rem', width: '100%' }}
+                      placeholder="name@email.com"
+                      value={forgotEmail}
+                      onChange={e => setForgotEmail(e.target.value)}
+                      required
+                    />
+                  </div>
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={forgotLoading}
+                  className="btn btn-primary w-full mt-2"
+                  style={{
+                    padding: '0.85rem',
+                    borderRadius: '16px',
+                    fontSize: '1.1rem',
+                    fontWeight: 800,
+                    boxShadow: '0 8px 12px -3px rgba(37, 169, 226, 0.3)',
+                    opacity: forgotLoading ? 0.7 : 1
+                  }}
+                >
+                  {forgotLoading ? 'Processing...' : 'Get Temporary Password'}
+                </button>
+              </form>
+            ) : tempPasswordToShow ? (
+              <div className="flex-col gap-6" style={{ display: 'flex', textAlign: 'center' }}>
+                <div style={{ margin: '0 auto', background: '#ECFDF5', color: '#059669', width: '56px', height: '56px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <Key size={28} />
+                </div>
+
+                <div>
+                  <h4 style={{ fontSize: '1.2rem', fontWeight: 800, color: '#111827', margin: '0 0 0.5rem 0' }}>Temporary Password Generated!</h4>
+                  <p className="text-muted text-sm font-medium leading-relaxed" style={{ margin: 0 }}>
+                    Copy this temporary password and use it to sign in. You will be prompted to choose a new password immediately.
+                  </p>
+                </div>
+
+                <div className="flex items-center justify-between bg-gray-50 rounded-2xl p-4 border border-gray-200" style={{ fontFamily: 'monospace', fontSize: '1.25rem', fontWeight: 700, color: 'var(--color-primary)', letterSpacing: '0.05em' }}>
+                  <span>{tempPasswordToShow}</span>
+                  <button
+                    onClick={handleCopyPassword}
+                    className="btn"
+                    style={{
+                      background: copied ? '#ECFDF5' : 'var(--color-primary-light)',
+                      color: copied ? '#059669' : 'var(--color-primary)',
+                      padding: '0.5rem 1rem',
+                      borderRadius: '10px',
+                      fontSize: '0.8rem',
+                      fontWeight: 800,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px'
+                    }}
+                  >
+                    {copied ? (
+                      <>
+                        <Check size={14} /> Copied
+                      </>
+                    ) : (
+                      <>
+                        <Copy size={14} /> Copy
+                      </>
+                    )}
+                  </button>
+                </div>
+
+                <button
+                  onClick={handleCloseAndPrefill}
+                  className="btn btn-primary w-full"
+                  style={{ padding: '0.85rem', borderRadius: '16px', fontWeight: 800 }}
+                >
+                  Proceed to Login
+                </button>
+              </div>
+            ) : (
+              <div className="flex-col gap-6" style={{ display: 'flex', textAlign: 'center' }}>
+                <div style={{ margin: '0 auto', background: '#EFF6FF', color: '#2563EB', width: '56px', height: '56px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <Mail size={28} />
+                </div>
+
+                <div>
+                  <h4 style={{ fontSize: '1.2rem', fontWeight: 800, color: '#111827', margin: '0 0 0.5rem 0' }}>Reset Email Sent!</h4>
+                  <p className="text-muted text-sm font-medium leading-relaxed" style={{ margin: 0 }}>
+                    We've sent a password reset link to <strong>{forgotEmail}</strong>. Please check your email inbox to complete the password reset.
+                  </p>
+                </div>
+
+                <button
+                  onClick={() => setShowForgotModal(false)}
+                  className="btn btn-primary w-full"
+                  style={{ padding: '0.85rem', borderRadius: '16px', fontWeight: 800 }}
+                >
+                  Okay
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 };

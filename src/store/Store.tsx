@@ -4,6 +4,8 @@ import {
   signInWithEmailAndPassword,
   signOut,
   onAuthStateChanged,
+  updatePassword,
+  sendPasswordResetEmail,
 } from 'firebase/auth';
 import {
   collection, doc, setDoc, addDoc, updateDoc,
@@ -68,6 +70,9 @@ export interface User {
   phone: string;
   address: string;
   role: UserRole;
+  password?: string;
+  tempPassword?: string;
+  needsPasswordReset?: boolean;
 }
 
 interface AppState {
@@ -99,6 +104,8 @@ interface AppState {
   updateProfile: (userId: string, data: Partial<User>) => Promise<void>;
   deleteAccount: (userId: string) => Promise<void>;
   requestNotificationPermission: () => Promise<boolean>;
+  resetForgottenPassword: (email: string) => Promise<{ success: boolean; tempPassword?: string; isFallback?: boolean; error?: string }>;
+  updateTempPassword: (newPassword: string) => Promise<void>;
 }
 
 const defaultProducts: Omit<Product, 'id'>[] = [
@@ -388,13 +395,26 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const signup = async (userData: { name: string; email: string; phone: string; address: string; password: string }) => {
     const { password, ...profile } = userData;
     const cred = await createUserWithEmailAndPassword(auth, userData.email, password);
-    const newProfile = { ...profile, role: 'user' as UserRole };
+    const newProfile = { ...profile, role: 'user' as UserRole, password };
     await setDoc(doc(db, 'users', cred.user.uid), newProfile);
     setCurrentUser({ id: cred.user.uid, ...newProfile });
   };
 
   const login = async (email: string, pass: string): Promise<boolean> => {
     try {
+      // 1. Check if user is logging in with a temporary password
+      const matchedUser = users.find(u => u.email.toLowerCase() === email.toLowerCase());
+      if (matchedUser && matchedUser.needsPasswordReset && matchedUser.tempPassword === pass) {
+        if (matchedUser.password) {
+          const cred = await signInWithEmailAndPassword(auth, email, matchedUser.password);
+          if (cred) {
+            setCurrentUser(matchedUser);
+            return true;
+          }
+        }
+      }
+
+      // 2. Normal login flow
       const cred = await signInWithEmailAndPassword(auth, email, pass);
       const userDoc = await getDoc(doc(db, 'users', cred.user.uid));
       if (userDoc.exists()) {
@@ -405,6 +425,64 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     } catch {
       return false;
     }
+  };
+
+  const resetForgottenPassword = async (email: string): Promise<{ success: boolean; tempPassword?: string; isFallback?: boolean; error?: string }> => {
+    try {
+      const matchedUser = users.find(u => u.email.toLowerCase() === email.toLowerCase());
+      if (!matchedUser) {
+        return { success: false, error: 'Email address not registered.' };
+      }
+
+      // If we don't have the backup password (older account), do fallback
+      if (!matchedUser.password) {
+        await sendPasswordResetEmail(auth, email);
+        return { success: true, isFallback: true };
+      }
+
+      // Generate random temporary password
+      const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+      let randomPart = '';
+      for (let i = 0; i < 6; i++) {
+        randomPart += chars.charAt(Math.floor(Math.random() * chars.length));
+      }
+      const tempPassword = `TEMP-${randomPart}`;
+
+      // Store in Firestore
+      await updateDoc(doc(db, 'users', matchedUser.id), {
+        tempPassword,
+        needsPasswordReset: true
+      });
+
+      return { success: true, tempPassword, isFallback: false };
+    } catch (e: any) {
+      console.error('Password reset failed:', e);
+      return { success: false, error: e.message || 'Failed to request reset.' };
+    }
+  };
+
+  const updateTempPassword = async (newPassword: string): Promise<void> => {
+    if (!auth.currentUser || !currentUser) {
+      throw new Error('No user is currently logged in.');
+    }
+
+    // Update Firebase Auth password
+    await updatePassword(auth.currentUser, newPassword);
+
+    // Update Firestore backup and clear temporary password flags
+    await updateDoc(doc(db, 'users', currentUser.id), {
+      password: newPassword,
+      tempPassword: null,
+      needsPasswordReset: false
+    });
+
+    // Update local state
+    setCurrentUser(prev => prev ? {
+      ...prev,
+      password: newPassword,
+      tempPassword: undefined,
+      needsPasswordReset: false
+    } : null);
   };
 
   const logout = async () => {
@@ -537,7 +615,8 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       addProduct, updateProduct, deleteProduct,
       signup, login, logout, updateUserRole, updateProfile, deleteAccount,
       requestNotificationPermission,
-      addToCart, removeFromCart, updateCartItem, clearSelectedFromCart
+      addToCart, removeFromCart, updateCartItem, clearSelectedFromCart,
+      resetForgottenPassword, updateTempPassword
     }}>
       {children}
     </StoreContext.Provider>

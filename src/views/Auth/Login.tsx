@@ -10,6 +10,8 @@ export const Login: React.FC = () => {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [emailFocused, setEmailFocused] = useState(false);
+  const [passwordFocused, setPasswordFocused] = useState(false);
 
   // Forgot password states
   const [showForgotModal, setShowForgotModal] = useState(false);
@@ -53,11 +55,11 @@ export const Login: React.FC = () => {
     e.preventDefault();
     setLoading(true);
     setError('');
-    const success = await login(email, password);
-    if (success) {
+    const result = await login(email, password);
+    if (result.success) {
       navigate('/');
     } else {
-      setError('Invalid email or password. Please try again.');
+      setError(result.error || 'Login failed. Please try again.');
       setLoading(false);
     }
   };
@@ -112,7 +114,7 @@ export const Login: React.FC = () => {
         borderRadius: '28px',
         boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.08)'
       }}>
-        <form onSubmit={handleSubmit} className="flex-col gap-8" style={{ display: 'flex' }}>
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
           {error && (
             <div style={{ padding: '1.25rem', background: '#FEF2F2', color: '#DC2626', borderRadius: '16px', fontSize: '0.875rem', textAlign: 'center', fontWeight: 700, border: '1px solid #FEE2E2' }}>
               {error}
@@ -121,16 +123,51 @@ export const Login: React.FC = () => {
 
           {/* Email Allowance */}
           <div>
-            <label className="text-sm font-black text-gray-700 mb-3 block uppercase tracking-wider ml-1">Email Address</label>
-            <div className="flex items-center gap-4 bg-gray-50 rounded-2xl px-5 border border-gray-200 focus-within:border-primary focus-within:bg-white transition-all duration-300">
+            <label
+              style={{
+                fontSize: '0.75rem',
+                fontWeight: 800,
+                color: '#4B5563',
+                marginBottom: '0.5rem',
+                display: 'block',
+                textTransform: 'uppercase',
+                letterSpacing: '0.05em',
+                paddingLeft: '0.25rem'
+              }}
+            >
+              Email Address
+            </label>
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.75rem',
+                backgroundColor: emailFocused ? '#ffffff' : '#F9FAFB',
+                borderRadius: '16px',
+                padding: '0.875rem 1.25rem',
+                border: emailFocused ? '2px solid var(--color-primary)' : '1px solid var(--color-border)',
+                boxShadow: emailFocused ? '0 0 0 4px rgba(37, 169, 226, 0.15)' : 'none',
+                transition: 'all 0.2s ease',
+              }}
+            >
               <Mail size={20} className="text-gray-400" />
               <input
                 type="email"
-                className="input"
-                style={{ border: 'none', background: 'transparent', padding: '1.25rem 0', fontWeight: 600, fontSize: '1rem' }}
+                style={{
+                  border: 'none',
+                  background: 'transparent',
+                  outline: 'none',
+                  fontWeight: 600,
+                  fontSize: '1rem',
+                  width: '100%',
+                  color: 'var(--color-text)',
+                  padding: 0,
+                }}
                 placeholder="name@email.com"
                 value={email}
                 onChange={e => setEmail(e.target.value)}
+                onFocus={() => setEmailFocused(true)}
+                onBlur={() => setEmailFocused(false)}
                 required
               />
             </div>
@@ -138,16 +175,51 @@ export const Login: React.FC = () => {
 
           {/* Password Allowance */}
           <div>
-            <label className="text-sm font-black text-gray-700 mb-3 block uppercase tracking-wider ml-1">Password</label>
-            <div className="flex items-center gap-4 bg-gray-50 rounded-2xl px-5 border border-gray-200 focus-within:border-primary focus-within:bg-white transition-all duration-300">
+            <label
+              style={{
+                fontSize: '0.75rem',
+                fontWeight: 800,
+                color: '#4B5563',
+                marginBottom: '0.5rem',
+                display: 'block',
+                textTransform: 'uppercase',
+                letterSpacing: '0.05em',
+                paddingLeft: '0.25rem'
+              }}
+            >
+              Password
+            </label>
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.75rem',
+                backgroundColor: passwordFocused ? '#ffffff' : '#F9FAFB',
+                borderRadius: '16px',
+                padding: '0.875rem 1.25rem',
+                border: passwordFocused ? '2px solid var(--color-primary)' : '1px solid var(--color-border)',
+                boxShadow: passwordFocused ? '0 0 0 4px rgba(37, 169, 226, 0.15)' : 'none',
+                transition: 'all 0.2s ease',
+              }}
+            >
               <Lock size={20} className="text-gray-400" />
               <input
                 type="password"
-                className="input"
-                style={{ border: 'none', background: 'transparent', padding: '1.25rem 0', fontWeight: 600, fontSize: '1rem' }}
+                style={{
+                  border: 'none',
+                  background: 'transparent',
+                  outline: 'none',
+                  fontWeight: 600,
+                  fontSize: '1rem',
+                  width: '100%',
+                  color: 'var(--color-text)',
+                  padding: 0,
+                }}
                 placeholder="••••••••"
                 value={password}
                 onChange={e => setPassword(e.target.value)}
+                onFocus={() => setPasswordFocused(true)}
+                onBlur={() => setPasswordFocused(false)}
                 required
               />
             </div>
@@ -162,7 +234,15 @@ export const Login: React.FC = () => {
                   setIsFallbackSent(false);
                 }}
                 className="text-xs font-bold hover:underline"
-                style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, color: 'var(--color-primary)' }}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  padding: 0,
+                  color: 'var(--color-primary)',
+                  fontSize: '0.75rem',
+                  fontWeight: 700
+                }}
               >
                 Forgot Password?
               </button>
@@ -225,50 +305,74 @@ export const Login: React.FC = () => {
           left: 0,
           right: 0,
           bottom: 0,
-          background: 'rgba(0,0,0,0.4)',
-          backdropFilter: 'blur(4px)',
+          background: 'rgba(0,0,0,0.55)',
+          backdropFilter: 'blur(6px)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
           zIndex: 1000,
           padding: '1.5rem'
         }}>
-          <div className="bg-white rounded-3xl p-8 w-full animate-slide-up" style={{ maxWidth: '420px', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)' }}>
-            <div className="flex justify-between items-center mb-6">
-              <h3 style={{ fontSize: '1.5rem', fontWeight: 900, color: 'var(--color-primary)', margin: 0 }}>Reset Password</h3>
+          <div style={{
+            background: '#ffffff',
+            borderRadius: '28px',
+            padding: '2rem',
+            width: '100%',
+            maxWidth: '440px',
+            boxShadow: '0 32px 64px -12px rgba(0, 0, 0, 0.35)',
+            animation: 'slideUp 0.3s ease'
+          }}>
+            {/* Modal Header */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                <div style={{ background: 'var(--color-primary-light)', color: 'var(--color-primary)', width: '40px', height: '40px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  <Key size={20} />
+                </div>
+                <h3 style={{ fontSize: '1.4rem', fontWeight: 900, color: '#111827', margin: 0 }}>Reset Password</h3>
+              </div>
               <button
                 onClick={() => setShowForgotModal(false)}
-                style={{ background: 'none', border: 'none', color: '#9CA3AF', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
+                style={{ background: '#F3F4F6', border: 'none', color: '#6B7280', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', width: '36px', height: '36px', borderRadius: '10px' }}
               >
-                <X size={24} />
+                <X size={20} />
               </button>
             </div>
 
             {!tempPasswordToShow && !isFallbackSent ? (
-              <form onSubmit={handleForgotSubmit} className="flex-col gap-5" style={{ display: 'flex' }}>
-                <p className="text-muted text-sm font-medium leading-relaxed" style={{ margin: 0 }}>
-                  Enter your email address below. We'll generate a temporary password for you to sign in and update your password.
+              <form onSubmit={handleForgotSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+                <p style={{ color: '#6B7280', fontSize: '0.9rem', fontWeight: 500, lineHeight: 1.6, margin: 0 }}>
+                  Enter your registered email address. We'll generate a temporary password you can use to sign in and set a new one.
                 </p>
 
                 {forgotError && (
-                  <div style={{ padding: '0.75rem 1rem', background: '#FEF2F2', color: '#DC2626', borderRadius: '12px', fontSize: '0.8rem', fontWeight: 700, border: '1px solid #FEE2E2', display: 'flex', gap: '8px', alignItems: 'center' }}>
-                    <AlertCircle size={16} />
+                  <div style={{ padding: '0.875rem 1rem', background: '#FEF2F2', color: '#B91C1C', borderRadius: '14px', fontSize: '0.875rem', fontWeight: 700, border: '1.5px solid #FECACA', display: 'flex', gap: '10px', alignItems: 'center' }}>
+                    <AlertCircle size={18} style={{ flexShrink: 0 }} />
                     <span>{forgotError}</span>
                   </div>
                 )}
 
                 <div>
-                  <label className="text-[10px] font-black text-gray-500 mb-2 block uppercase tracking-wider ml-1">Email Address</label>
-                  <div className="flex items-center gap-4 bg-gray-50 rounded-2xl px-4 border border-gray-200 focus-within:border-primary focus-within:bg-white transition-all duration-300">
-                    <Mail size={18} className="text-gray-400" />
+                  <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#374151', marginBottom: '0.5rem', display: 'block', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                    Email Address
+                  </label>
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.75rem',
+                    background: '#F9FAFB',
+                    borderRadius: '14px',
+                    padding: '0.875rem 1.125rem',
+                    border: '1.5px solid #E5E7EB',
+                  }}>
+                    <Mail size={18} style={{ color: '#9CA3AF', flexShrink: 0 }} />
                     <input
                       type="email"
-                      className="input"
-                      style={{ border: 'none', background: 'transparent', padding: '1rem 0', fontWeight: 600, fontSize: '0.95rem', width: '100%' }}
-                      placeholder="name@email.com"
+                      style={{ border: 'none', background: 'transparent', outline: 'none', fontWeight: 600, fontSize: '1rem', width: '100%', color: '#111827' }}
+                      placeholder="your@email.com"
                       value={forgotEmail}
                       onChange={e => setForgotEmail(e.target.value)}
                       required
+                      autoFocus
                     />
                   </div>
                 </div>
@@ -276,88 +380,114 @@ export const Login: React.FC = () => {
                 <button
                   type="submit"
                   disabled={forgotLoading}
-                  className="btn btn-primary w-full mt-2"
+                  className="btn btn-primary w-full"
                   style={{
-                    padding: '0.85rem',
-                    borderRadius: '16px',
-                    fontSize: '1.1rem',
+                    padding: '0.9rem',
+                    borderRadius: '14px',
+                    fontSize: '1rem',
                     fontWeight: 800,
-                    boxShadow: '0 8px 12px -3px rgba(37, 169, 226, 0.3)',
-                    opacity: forgotLoading ? 0.7 : 1
+                    boxShadow: '0 8px 16px -4px rgba(37, 169, 226, 0.4)',
+                    opacity: forgotLoading ? 0.7 : 1,
+                    marginTop: '0.25rem',
                   }}
                 >
-                  {forgotLoading ? 'Processing...' : 'Get Temporary Password'}
+                  {forgotLoading ? '⏳ Generating...' : 'Get Temporary Password'}
                 </button>
               </form>
             ) : tempPasswordToShow ? (
-              <div className="flex-col gap-6" style={{ display: 'flex', textAlign: 'center' }}>
-                <div style={{ margin: '0 auto', background: '#ECFDF5', color: '#059669', width: '56px', height: '56px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <Key size={28} />
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', textAlign: 'center' }}>
+                <div style={{ margin: '0 auto', background: '#ECFDF5', color: '#059669', width: '68px', height: '68px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <Key size={32} />
                 </div>
 
                 <div>
-                  <h4 style={{ fontSize: '1.2rem', fontWeight: 800, color: '#111827', margin: '0 0 0.5rem 0' }}>Temporary Password Generated!</h4>
-                  <p className="text-muted text-sm font-medium leading-relaxed" style={{ margin: 0 }}>
-                    Copy this temporary password and use it to sign in. You will be prompted to choose a new password immediately.
+                  <h4 style={{ fontSize: '1.3rem', fontWeight: 900, color: '#111827', margin: '0 0 0.5rem 0' }}>Temporary Password Ready!</h4>
+                  <p style={{ color: '#6B7280', fontSize: '0.875rem', fontWeight: 500, lineHeight: 1.6, margin: 0 }}>
+                    Copy this password, then click <strong style={{ color: '#111827' }}>"Proceed to Login"</strong> — your fields will be filled automatically.
                   </p>
                 </div>
 
-                <div className="flex items-center justify-between bg-gray-50 rounded-2xl p-4 border border-gray-200" style={{ fontFamily: 'monospace', fontSize: '1.25rem', fontWeight: 700, color: 'var(--color-primary)', letterSpacing: '0.05em' }}>
-                  <span>{tempPasswordToShow}</span>
+                {/* Temp Password Display Box */}
+                <div style={{
+                  background: 'linear-gradient(135deg, #EFF6FF 0%, #F0F9FF 100%)',
+                  border: '2px solid var(--color-primary)',
+                  borderRadius: '18px',
+                  padding: '1.25rem 1.5rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  gap: '1rem',
+                }}>
+                  <span style={{
+                    fontFamily: '"Courier New", Courier, monospace',
+                    fontSize: '1.5rem',
+                    fontWeight: 900,
+                    color: '#1D4ED8',
+                    letterSpacing: '0.06em',
+                    wordBreak: 'break-all',
+                    textAlign: 'left',
+                    flex: 1,
+                    userSelect: 'all',
+                  }}>{tempPasswordToShow}</span>
                   <button
                     onClick={handleCopyPassword}
-                    className="btn"
                     style={{
-                      background: copied ? '#ECFDF5' : 'var(--color-primary-light)',
-                      color: copied ? '#059669' : 'var(--color-primary)',
-                      padding: '0.5rem 1rem',
-                      borderRadius: '10px',
-                      fontSize: '0.8rem',
+                      background: copied ? '#ECFDF5' : 'var(--color-primary)',
+                      color: copied ? '#059669' : '#ffffff',
+                      border: 'none',
+                      cursor: 'pointer',
+                      padding: '0.65rem 1.25rem',
+                      borderRadius: '12px',
+                      fontSize: '0.85rem',
                       fontWeight: 800,
                       display: 'flex',
                       alignItems: 'center',
-                      gap: '4px'
+                      gap: '6px',
+                      whiteSpace: 'nowrap',
+                      flexShrink: 0,
+                      transition: 'all 0.2s ease',
+                      boxShadow: copied ? 'none' : '0 4px 8px -2px rgba(37,169,226,0.4)',
                     }}
                   >
                     {copied ? (
-                      <>
-                        <Check size={14} /> Copied
-                      </>
+                      <><Check size={16} /> Copied!</>
                     ) : (
-                      <>
-                        <Copy size={14} /> Copy
-                      </>
+                      <><Copy size={16} /> Copy</>
                     )}
                   </button>
+                </div>
+
+                <div style={{ background: '#FFFBEB', border: '1px solid #FDE68A', borderRadius: '12px', padding: '0.75rem 1rem', fontSize: '0.8rem', color: '#92400E', fontWeight: 600, textAlign: 'left' }}>
+                  💡 This is a one-time temporary password. You'll be required to set a new permanent password after logging in.
                 </div>
 
                 <button
                   onClick={handleCloseAndPrefill}
                   className="btn btn-primary w-full"
-                  style={{ padding: '0.85rem', borderRadius: '16px', fontWeight: 800 }}
+                  style={{ padding: '0.95rem', borderRadius: '14px', fontWeight: 800, fontSize: '1.05rem', boxShadow: '0 8px 16px -4px rgba(37, 169, 226, 0.4)' }}
                 >
-                  Proceed to Login
+                  Proceed to Login →
                 </button>
               </div>
             ) : (
-              <div className="flex-col gap-6" style={{ display: 'flex', textAlign: 'center' }}>
-                <div style={{ margin: '0 auto', background: '#EFF6FF', color: '#2563EB', width: '56px', height: '56px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <Mail size={28} />
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', textAlign: 'center' }}>
+                <div style={{ margin: '0 auto', background: '#EFF6FF', color: '#2563EB', width: '64px', height: '64px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <Mail size={30} />
                 </div>
 
                 <div>
-                  <h4 style={{ fontSize: '1.2rem', fontWeight: 800, color: '#111827', margin: '0 0 0.5rem 0' }}>Reset Email Sent!</h4>
-                  <p className="text-muted text-sm font-medium leading-relaxed" style={{ margin: 0 }}>
-                    We've sent a password reset link to <strong>{forgotEmail}</strong>. Please check your email inbox to complete the password reset.
+                  <h4 style={{ fontSize: '1.25rem', fontWeight: 900, color: '#111827', margin: '0 0 0.75rem 0' }}>Reset Email Sent!</h4>
+                  <p style={{ color: '#6B7280', fontSize: '0.9rem', fontWeight: 500, lineHeight: 1.6, margin: 0 }}>
+                    A password reset link has been sent to <strong style={{ color: '#111827' }}>{forgotEmail}</strong>. Please check your inbox.
                   </p>
                 </div>
 
                 <button
                   onClick={() => setShowForgotModal(false)}
                   className="btn btn-primary w-full"
-                  style={{ padding: '0.85rem', borderRadius: '16px', fontWeight: 800 }}
+                  style={{ padding: '0.9rem', borderRadius: '14px', fontWeight: 800 }}
                 >
-                  Okay
+                  Got it, Close
                 </button>
               </div>
             )}

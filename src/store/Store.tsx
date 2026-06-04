@@ -98,7 +98,7 @@ interface AppState {
   updateProduct: (product: Product) => Promise<void>;
   deleteProduct: (productId: string) => Promise<void>;
   signup: (userData: { name: string; email: string; phone: string; address: string; password: string }) => Promise<void>;
-  login: (email: string, pass: string) => Promise<boolean>;
+  login: (email: string, pass: string) => Promise<{ success: boolean; error?: string }>;
   logout: () => Promise<void>;
   updateUserRole: (userId: string, role: UserRole) => Promise<void>;
   updateProfile: (userId: string, data: Partial<User>) => Promise<void>;
@@ -400,64 +400,44 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     setCurrentUser({ id: cred.user.uid, ...newProfile });
   };
 
-  const login = async (email: string, pass: string): Promise<boolean> => {
+  const login = async (email: string, pass: string): Promise<{ success: boolean; error?: string }> => {
     try {
-      // 1. Check if user is logging in with a temporary password
-      const matchedUser = users.find(u => u.email.toLowerCase() === email.toLowerCase());
-      if (matchedUser && matchedUser.needsPasswordReset && matchedUser.tempPassword === pass) {
-        if (matchedUser.password) {
-          const cred = await signInWithEmailAndPassword(auth, email, matchedUser.password);
-          if (cred) {
-            setCurrentUser(matchedUser);
-            return true;
-          }
-        }
+      // Sign in with Firebase Auth — the onAuthStateChanged listener will
+      // automatically fetch the Firestore profile and set currentUser.
+      await signInWithEmailAndPassword(auth, email, pass);
+      return { success: true };
+    } catch (e: any) {
+      console.error('Login error:', e.code, e.message);
+      if (e.code === 'auth/invalid-credential' || e.code === 'auth/wrong-password' || e.code === 'auth/user-not-found') {
+        return { success: false, error: 'Incorrect email or password. Please try again.' };
       }
-
-      // 2. Normal login flow
-      const cred = await signInWithEmailAndPassword(auth, email, pass);
-      const userDoc = await getDoc(doc(db, 'users', cred.user.uid));
-      if (userDoc.exists()) {
-        setCurrentUser({ id: cred.user.uid, ...userDoc.data() } as User);
-        return true;
+      if (e.code === 'auth/invalid-email') {
+        return { success: false, error: 'Please enter a valid email address.' };
       }
-      return false;
-    } catch {
-      return false;
+      if (e.code === 'auth/too-many-requests') {
+        return { success: false, error: 'Too many failed attempts. Please wait a few minutes and try again.' };
+      }
+      if (e.code === 'auth/user-disabled') {
+        return { success: false, error: 'This account has been disabled. Please contact support.' };
+      }
+      return { success: false, error: e.message || 'Login failed. Please try again.' };
     }
   };
 
   const resetForgottenPassword = async (email: string): Promise<{ success: boolean; tempPassword?: string; isFallback?: boolean; error?: string }> => {
     try {
-      const matchedUser = users.find(u => u.email.toLowerCase() === email.toLowerCase());
-      if (!matchedUser) {
-        return { success: false, error: 'Email address not registered.' };
-      }
-
-      // If we don't have the backup password (older account), do fallback
-      if (!matchedUser.password) {
-        await sendPasswordResetEmail(auth, email);
-        return { success: true, isFallback: true };
-      }
-
-      // Generate random temporary password
-      const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-      let randomPart = '';
-      for (let i = 0; i < 6; i++) {
-        randomPart += chars.charAt(Math.floor(Math.random() * chars.length));
-      }
-      const tempPassword = `TEMP-${randomPart}`;
-
-      // Store in Firestore
-      await updateDoc(doc(db, 'users', matchedUser.id), {
-        tempPassword,
-        needsPasswordReset: true
-      });
-
-      return { success: true, tempPassword, isFallback: false };
+      // We cannot query Firestore as an unauthenticated user (Firestore rules block it).
+      // Instead, use Firebase Auth's sendPasswordResetEmail — this works without any
+      // Firestore read permissions and is the secure, standard approach.
+      await sendPasswordResetEmail(auth, email.trim());
+      return { success: true, isFallback: true };
     } catch (e: any) {
       console.error('Password reset failed:', e);
-      return { success: false, error: e.message || 'Failed to request reset.' };
+      // Firebase Auth error codes for "email not found"
+      if (e.code === 'auth/user-not-found' || e.code === 'auth/invalid-email') {
+        return { success: false, error: 'Email address not registered. Please check and try again.' };
+      }
+      return { success: false, error: 'Failed to send reset email. Please try again later.' };
     }
   };
 

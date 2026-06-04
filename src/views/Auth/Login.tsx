@@ -138,23 +138,7 @@ export const Login: React.FC = () => {
 
           {/* Password Allowance */}
           <div>
-            <div className="flex justify-between items-center mb-3">
-              <label className="text-sm font-black text-gray-700 block uppercase tracking-wider ml-1">Password</label>
-              <button
-                type="button"
-                onClick={() => {
-                  setShowForgotModal(true);
-                  setForgotEmail('');
-                  setForgotError('');
-                  setTempPasswordToShow('');
-                  setIsFallbackSent(false);
-                }}
-                className="text-xs font-bold text-primary hover:underline"
-                style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
-              >
-                Forgot Password?
-              </button>
-            </div>
+            <label className="text-sm font-black text-gray-700 mb-3 block uppercase tracking-wider ml-1">Password</label>
             <div className="flex items-center gap-4 bg-gray-50 rounded-2xl px-5 border border-gray-200 focus-within:border-primary focus-within:bg-white transition-all duration-300">
               <Lock size={20} className="text-gray-400" />
               <input
@@ -166,6 +150,22 @@ export const Login: React.FC = () => {
                 onChange={e => setPassword(e.target.value)}
                 required
               />
+            </div>
+            <div className="flex" style={{ justifyContent: 'flex-end', marginTop: '0.5rem', paddingRight: '0.25rem' }}>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowForgotModal(true);
+                  setForgotEmail('');
+                  setForgotError('');
+                  setTempPasswordToShow('');
+                  setIsFallbackSent(false);
+                }}
+                className="text-xs font-bold hover:underline"
+                style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, color: 'var(--color-primary)' }}
+              >
+                Forgot Password?
+              </button>
             </div>
           </div>
 

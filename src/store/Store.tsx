@@ -136,12 +136,16 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   // Seed default data on first run
   useEffect(() => {
     const seed = async () => {
-      const snap = await getDocs(collection(db, 'products'));
-      if (snap.empty) {
-        for (const p of defaultProducts) await addDoc(collection(db, 'products'), p);
+      try {
+        const snap = await getDocs(collection(db, 'products'));
+        if (snap.empty) {
+          for (const p of defaultProducts) await addDoc(collection(db, 'products'), p);
+        }
+        const cfg = await getDoc(doc(db, 'settings', 'config'));
+        if (!cfg.exists()) await setDoc(doc(db, 'settings', 'config'), { deliveryFee: 50 });
+      } catch (error) {
+        console.warn('Seed operation skipped (likely due to permissions):', error);
       }
-      const cfg = await getDoc(doc(db, 'settings', 'config'));
-      if (!cfg.exists()) await setDoc(doc(db, 'settings', 'config'), { deliveryFee: 50 });
     };
     seed();
   }, []);
@@ -149,48 +153,90 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   // Firebase Auth listener
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (firebaseUser) => {
-      if (firebaseUser) {
-        const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid));
-        if (userDoc.exists()) {
-          setCurrentUser({ id: firebaseUser.uid, ...userDoc.data() } as User);
+      try {
+        if (firebaseUser) {
+          const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid));
+          if (userDoc.exists()) {
+            setCurrentUser({ id: firebaseUser.uid, ...userDoc.data() } as User);
+          } else {
+            console.warn('User document does not exist in Firestore:', firebaseUser.uid);
+            setCurrentUser(null);
+          }
+        } else {
+          setCurrentUser(null);
         }
-      } else {
+      } catch (error) {
+        console.error('Error fetching user profile from Firestore:', error);
         setCurrentUser(null);
+      } finally {
+        setAuthLoading(false);
       }
-      setAuthLoading(false);
     });
     return unsub;
   }, []);
 
   // Real-time listeners
   useEffect(() => {
-    const unsub = onSnapshot(collection(db, 'products'), (snap) => {
-      setProducts(snap.docs.map(d => ({ id: d.id, ...d.data() } as Product)));
-    });
+    const unsub = onSnapshot(
+      collection(db, 'products'),
+      (snap) => {
+        setProducts(snap.docs.map(d => ({ id: d.id, ...d.data() } as Product)));
+      },
+      (error) => {
+        console.error('Firestore: Error listening to products:', error);
+      }
+    );
     return unsub;
   }, []);
 
   useEffect(() => {
+    if (!currentUser) {
+      setOrders([]);
+      return;
+    }
     const q = query(collection(db, 'orders'), orderBy('createdAt', 'desc'));
-    const unsub = onSnapshot(q, (snap) => {
-      setOrders(snap.docs.map(d => ({ id: d.id, ...d.data() } as Order)));
-    });
+    const unsub = onSnapshot(
+      q,
+      (snap) => {
+        setOrders(snap.docs.map(d => ({ id: d.id, ...d.data() } as Order)));
+      },
+      (error) => {
+        console.error('Firestore: Error listening to orders:', error);
+      }
+    );
     return unsub;
-  }, []);
+  }, [currentUser]);
 
   useEffect(() => {
-    const unsub = onSnapshot(collection(db, 'users'), (snap) => {
-      setUsers(snap.docs.map(d => ({ id: d.id, ...d.data() } as User)));
-    });
+    if (!currentUser || (currentUser.role !== 'admin' && currentUser.role !== 'superuser')) {
+      setUsers([]);
+      return;
+    }
+    const unsub = onSnapshot(
+      collection(db, 'users'),
+      (snap) => {
+        setUsers(snap.docs.map(d => ({ id: d.id, ...d.data() } as User)));
+      },
+      (error) => {
+        console.error('Firestore: Error listening to users:', error);
+      }
+    );
     return unsub;
-  }, []);
+  }, [currentUser]);
 
   useEffect(() => {
-    const unsub = onSnapshot(doc(db, 'settings', 'config'), (snap) => {
-      if (snap.exists()) setDeliveryFeeState(snap.data().deliveryFee ?? 50);
-    });
+    if (!currentUser) return;
+    const unsub = onSnapshot(
+      doc(db, 'settings', 'config'),
+      (snap) => {
+        if (snap.exists()) setDeliveryFeeState(snap.data().deliveryFee ?? 50);
+      },
+      (error) => {
+        console.error('Firestore: Error listening to settings config:', error);
+      }
+    );
     return unsub;
-  }, []);
+  }, [currentUser]);
 
   // Browser Notification System
   useEffect(() => {
@@ -402,10 +448,15 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const login = async (email: string, pass: string): Promise<{ success: boolean; error?: string }> => {
     try {
-      // Sign in with Firebase Auth — the onAuthStateChanged listener will
-      // automatically fetch the Firestore profile and set currentUser.
-      await signInWithEmailAndPassword(auth, email, pass);
-      return { success: true };
+      const cred = await signInWithEmailAndPassword(auth, email, pass);
+      const userDoc = await getDoc(doc(db, 'users', cred.user.uid));
+      if (userDoc.exists()) {
+        setCurrentUser({ id: cred.user.uid, ...userDoc.data() } as User);
+        return { success: true };
+      } else {
+        await signOut(auth);
+        return { success: false, error: 'User profile record not found. Please contact support.' };
+      }
     } catch (e: any) {
       console.error('Login error:', e.code, e.message);
       if (e.code === 'auth/invalid-credential' || e.code === 'auth/wrong-password' || e.code === 'auth/user-not-found') {
